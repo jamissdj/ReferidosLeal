@@ -173,7 +173,7 @@
       <div class="stat"><div class="stat-num" id="stat-total">—</div><div class="stat-label">Total</div></div>
       <div class="stat"><div class="stat-num disp" id="stat-disp">—</div><div class="stat-label">Disponibles</div></div>
       <div class="stat"><div class="stat-num proc" id="stat-proc">—</div><div class="stat-label">En proceso</div></div>
-      <div class="stat"><div class="stat-num cont" id="stat-cont">—</div><div class="stat-label">Contratados</div></div>
+
     </div>
   </div>
 </header>
@@ -184,11 +184,10 @@
     <input class="search-input" type="text" id="search" placeholder="Buscar por nombre, cargo, habilidades…">
   </div>
   <div class="filter-pills">
-    <button class="pill active" data-estado="todos">Todos</button>
     <button class="pill disponible" data-estado="Disponible">Disponibles</button>
     <button class="pill proceso" data-estado="En proceso">En proceso</button>
-    <button class="pill contratado" data-estado="Contratado">Contratados</button>
     <button class="pill rechazado" data-estado="Rechazado">Rechazados</button>
+    <button class="pill" id="btn-limpiar" style="display:none;border-color:#9CA3AF;color:#6B7280;">&#10005; Limpiar</button>
   </div>
   <div class="results-count" id="results-count"></div>
 
@@ -256,7 +255,7 @@ var CANDIDATOS = [{"nombre":"Diana Marcela Cocuy Bocanegra","referido_por":"Angi
   function loadOverrides() { try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch { return {}; } }
   function saveOverrides(obj) { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(obj)); } catch {} }
 
-  let candidatos = [], filtered = [], overrides = loadOverrides(), currentFilter = 'todos', currentSearch = '', currentIdx = null;
+  let candidatos = [], filtered = [], overrides = loadOverrides(), currentFilter = null, currentSearch = '', currentIdx = null;
 
   function estadoEfectivo(c) { return overrides[c.nombre] ? (overrides[c.nombre].estado || 'En proceso') : (c.estado || 'Disponible'); }
   function estadoClass(e) {
@@ -269,7 +268,7 @@ var CANDIDATOS = [{"nombre":"Diana Marcela Cocuy Bocanegra","referido_por":"Angi
     document.getElementById('stat-total').textContent = data.length;
     document.getElementById('stat-disp').textContent = data.filter(c => estadoEfectivo(c) === 'Disponible').length;
     document.getElementById('stat-proc').textContent = data.filter(c => estadoEfectivo(c) === 'En proceso').length;
-    document.getElementById('stat-cont').textContent = data.filter(c => estadoEfectivo(c) === 'Contratado').length;
+    // stat-cont removed
   }
 
   function notifyAdmin(nombre, nuevoEstado) {
@@ -362,9 +361,15 @@ var CANDIDATOS = [{"nombre":"Diana Marcela Cocuy Bocanegra","referido_por":"Angi
 
     function applyFilters() {
     const q = currentSearch.toLowerCase().trim();
+    if (!currentFilter && !q) {
+      filtered = [];
+      renderGrid(true);
+      document.getElementById('results-count').textContent = '';
+      return;
+    }
     filtered = candidatos.filter(c => {
       const est = estadoEfectivo(c);
-      if (currentFilter !== 'todos' && est !== currentFilter) return false;
+      if (currentFilter && currentFilter !== 'todos' && est !== currentFilter) return false;
       if (q) {
         const hay = [c.nombre, c.cargo, c.profesion, c.ultima_empresa, c.ultimo_cargo, c.resumen, c.referido_por].join(' ').toLowerCase();
         if (!hay.includes(q)) return false;
@@ -380,8 +385,12 @@ var CANDIDATOS = [{"nombre":"Diana Marcela Cocuy Bocanegra","referido_por":"Angi
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
-  function renderGrid() {
+  function renderGrid(noFilter) {
     const grid = document.getElementById('grid');
+    if (noFilter) {
+      grid.innerHTML = '<div class="empty"><div class="empty-icon">&#127919;</div><p>Selecciona un filtro para ver los candidatos.</p></div>';
+      return;
+    }
     if (!filtered.length) {
       grid.innerHTML = '<div class="empty"><div class="empty-icon">&#128269;</div><p>No hay candidatos que coincidan con los filtros.</p></div>';
       return;
@@ -457,18 +466,27 @@ var CANDIDATOS = [{"nombre":"Diana Marcela Cocuy Bocanegra","referido_por":"Angi
   document.getElementById('modal-overlay').addEventListener('click', e => { if (e.target === document.getElementById('modal-overlay')) closeModal(); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
 
-  document.querySelectorAll('.pill').forEach(pill => {
+  function limpiarFiltro() {
+    document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+    document.getElementById('btn-limpiar').style.display = 'none';
+    currentFilter = null;
+    applyFilters();
+  }
+  document.getElementById('btn-limpiar').addEventListener('click', limpiarFiltro);
+
+  document.querySelectorAll('.pill[data-estado]').forEach(pill => {
     pill.addEventListener('click', function() {
-      document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.pill[data-estado]').forEach(p => p.classList.remove('active'));
       this.classList.add('active');
       currentFilter = this.dataset.estado;
+      document.getElementById('btn-limpiar').style.display = '';
       applyFilters();
     });
   });
 
   document.getElementById('search').addEventListener('input', function() { currentSearch = this.value; applyFilters(); });
 
-  candidatos = CANDIDATOS; updateStats(candidatos); applyFilters();
+  candidatos = CANDIDATOS.filter(c => estadoEfectivo(c) !== 'Contratado'); updateStats(candidatos); applyFilters();
 
   document.getElementById('modal-nuevo-overlay').addEventListener('click', function(e) {
     if (e.target === this) closeNuevo();

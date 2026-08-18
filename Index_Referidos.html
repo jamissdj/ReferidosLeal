@@ -207,6 +207,11 @@
     <button class="pill" id="btn-limpiar" style="display:none;border-color:#9CA3AF;color:#6B7280;">&#10005; Limpiar</button>
   </div>
   <div class="results-count" id="results-count"></div>
+  <select id="sort-select" style="padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-2);background:var(--surface);cursor:pointer;outline:none;">
+    <option value="fecha-desc">Más recientes primero</option>
+    <option value="fecha-asc">Más antiguos primero</option>
+    <option value="alfa">Alfabético</option>
+  </select>
   <button class="btn-referir-global" onclick="abrirFormReferir()">&#43; Referir candidato</button>
 </div>
 <div class="filter-bar" id="cargo-filter-bar">
@@ -478,6 +483,13 @@ var CANDIDATOS = [{"nombre":"Diana Marcela Cocuy Bocanegra","referido_por":"Angi
       }
       return true;
     });
+    var sortVal = (document.getElementById('sort-select') || {}).value || 'fecha-desc';
+    filtered.sort(function(a, b) {
+      if (sortVal === 'alfa') return (a.nombre || '').localeCompare(b.nombre || '', 'es');
+      var da = a.fecha || '0', db = b.fecha || '0';
+      if (sortVal === 'fecha-asc') return da < db ? -1 : da > db ? 1 : 0;
+      return da > db ? -1 : da < db ? 1 : 0;
+    });
     renderGrid();
     document.getElementById('results-count').textContent = filtered.length + ' candidato' + (filtered.length !== 1 ? 's' : '');
   }
@@ -514,7 +526,7 @@ var CANDIDATOS = [{"nombre":"Diana Marcela Cocuy Bocanegra","referido_por":"Angi
           (c.resumen ? '<p class="card-resumen">' + esc(c.resumen) + '</p>' : '') +
         '</div>' +
         '<div class="card-footer">' +
-          '<div class="ref-info">Referido por <strong>' + esc(c.referido_por || '—') + '</strong></div>' +
+          '<div class="ref-info">Referido por <strong>' + esc(c.referido_por || '—') + '</strong>' + (c.fecha ? '<span style="color:var(--text-4);font-size:11px;margin-left:6px;">· ' + c.fecha + '</span>' : '') + '</div>' +
           '<button class="btn-ver">Ver perfil →</button>' +
         '</div>' +
       '</div>';
@@ -603,6 +615,7 @@ var CANDIDATOS = [{"nombre":"Diana Marcela Cocuy Bocanegra","referido_por":"Angi
   });
 
   document.getElementById('search').addEventListener('input', function() { currentSearch = this.value; applyFilters(); });
+  document.getElementById('sort-select').addEventListener('change', function() { applyFilters(); });
 
   // candidatos loaded via Firebase callback above
 

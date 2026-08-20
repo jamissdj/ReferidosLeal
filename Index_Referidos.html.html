@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Referidos Leal — Banco de Talento</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F0F2F7;
+    --surface: #FFFFFF;
+    --surface2: #F7F8FC;
+    --border: #E4E7EF;
+    --text: #111827;
+    --text-2: #4B5563;
+    --text-3: #9CA3AF;
+    --accent: #2B4EE6;
+    --accent-light: #EEF2FF;
+    --disponible: #059669;
+    --disponible-bg: #ECFDF5;
+    --proceso: #D97706;
+    --proceso-bg: #FFFBEB;
+    --contratado: #7C3AED;
+    --contratado-bg: #F5F3FF;
+    --rechazado: #9CA3AF;
+    --rechazado-bg: #F9FAFB;
+    --radius: 12px;
+    --radius-sm: 6px;
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+  header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 32px; position: sticky; top: 0; z-index: 100; }
+  .header-inner { max-width: 1280px; margin: 0 auto; display: flex; align-items: center; gap: 32px; height: 64px; }
+  .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; flex-shrink: 0; }
+  .logo-mark { width: 34px; height: 34px; background: var(--accent); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #fff; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 15px; letter-spacing: -0.5px; }
+  .logo-text { font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 15px; color: var(--text); line-height: 1.2; }
+  .logo-sub { font-size: 11px; font-weight: 400; color: var(--text-3); }
+  .header-stats { display: flex; gap: 24px; margin-left: auto; }
+  .stat { text-align: center; }
+  .stat-num { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 18px; line-height: 1; color: var(--text); }
+  .stat-label { font-size: 11px; color: var(--text-3); margin-top: 2px; white-space: nowrap; }
+  .stat-num.disp { color: var(--disponible); }
+  .stat-num.proc { color: var(--proceso); }
+  .stat-num.cont { color: var(--contratado); }
+  .toolbar { max-width: 1280px; margin: 28px auto 0; padding: 0 32px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  .search-wrap { position: relative; flex: 1; min-width: 220px; }
+  .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-3); pointer-events: none; }
+  .search-input { width: 100%; padding: 10px 12px 10px 36px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--text); outline: none; transition: border-color 0.15s; }
+  .search-input:focus { border-color: var(--accent); }
+  .search-input::placeholder { color: var(--text-3); }
+  .filter-bar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; padding: 8px 0 4px; border-top: 1px solid var(--border); margin-top: 8px; }
+  .filter-bar-label { font-size: 11px; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.06em; margin-right: 4px; white-space: nowrap; }
+  .pill.cargo.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .filter-pills { display: flex; gap: 6px; flex-wrap: wrap; }
+  .pill { padding: 8px 14px; border-radius: 20px; border: 1.5px solid var(--border); background: var(--surface); font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; color: var(--text-2); cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+  .pill:hover { border-color: var(--accent); color: var(--accent); }
+  .pill.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .pill.active.disponible { background: var(--disponible); border-color: var(--disponible); }
+  .pill.active.proceso { background: var(--proceso); border-color: var(--proceso); }
+  .pill.active.contratado { background: var(--contratado); border-color: var(--contratado); }
+  .pill.active.rechazado { background: #6B7280; border-color: #6B7280; }
+  .results-count { font-size: 13px; color: var(--text-3); margin-left: auto; white-space: nowrap; }
+  .grid { max-width: 1280px; margin: 20px auto 60px; padding: 0 32px; display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; }
+  .card { background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); overflow: hidden; cursor: pointer; transition: transform 0.15s, box-shadow 0.15s; display: flex; flex-direction: column; }
+  .card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
+  .card-stripe { height: 4px; width: 100%; flex-shrink: 0; }
+  .card-stripe.disponible { background: var(--disponible); }
+  .card-stripe.en-proceso { background: var(--proceso); }
+  .card-stripe.contratado { background: var(--contratado); }
+  .card-stripe.rechazado { background: var(--rechazado); }
+  .card-body { padding: 18px 20px 16px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
+  .card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+  .card-name { font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 15px; line-height: 1.3; color: var(--text); }
+  .badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 20px; font-size: 11.5px; font-weight: 600; white-space: nowrap; flex-shrink: 0; }
+  .badge::before { content: ''; display: block; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .badge.disponible { background: var(--disponible-bg); color: var(--disponible); }
+  .badge.en-proceso { background: var(--proceso-bg); color: var(--proceso); }
+  .badge.contratado { background: var(--contratado-bg); color: var(--contratado); }
+  .badge.rechazado { background: var(--rechazado-bg); color: var(--rechazado); }
+  .card-cargo { font-size: 12.5px; font-weight: 500; color: var(--accent); background: var(--accent-light); display: inline-block; padding: 2px 8px; border-radius: 4px; align-self: flex-start; }
+  .card-meta { display: flex; gap: 16px; font-size: 12.5px; color: var(--text-2); }
+  .card-meta span { display: flex; align-items: center; gap: 4px; }
+  .card-resumen { font-size: 13px; color: var(--text-2); line-height: 1.55; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .card-footer { padding: 12px 20px 14px; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; background: var(--surface2); }
+  .ref-info { font-size: 11.5px; color: var(--text-3); }
+  .ref-info strong { color: var(--text-2); font-weight: 500; }
+  .btn-ver { font-family: 'DM Sans', sans-serif; font-size: 12.5px; font-weight: 500; color: var(--accent); background: none; border: 1.5px solid var(--accent); border-radius: 6px; padding: 5px 12px; cursor: pointer; transition: all 0.15s; }
+  .btn-ver:hover { background: var(--accent); color: #fff; }
+  .empty { grid-column: 1 / -1; text-align: center; padding: 60px 20px; color: var(--text-3); }
+  .empty-icon { font-size: 40px; margin-bottom: 12px; }
+  .empty p { font-size: 15px; }
+  .modal-overlay { position: fixed; inset: 0; background: rgba(15, 20, 40, 0.45); backdrop-filter: blur(4px); z-index: 200; display: none; align-items: center; justify-content: center; padding: 20px; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--surface); border-radius: 16px; width: 100%; max-width: 660px; max-height: 90vh; overflow-y: auto; box-shadow: 0 24px 64px rgba(0,0,0,0.18); }
+  .modal-header { position: sticky; top: 0; background: var(--surface); padding: 22px 28px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; gap: 14px; z-index: 1; }
+  .modal-header-text { flex: 1; }
+  .modal-name { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 20px; color: var(--text); margin-bottom: 6px; }
+  .modal-badges { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .btn-close { background: none; border: none; cursor: pointer; color: var(--text-3); padding: 4px; border-radius: 6px; transition: color 0.15s, background 0.15s; flex-shrink: 0; font-size: 20px; line-height: 1; }
+  .btn-close:hover { color: var(--text); background: var(--bg); }
+  .modal-body { padding: 24px 28px 28px; }
+  .section-label { font-family: 'Space Grotesk', sans-serif; font-size: 10.5px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-3); margin-bottom: 8px; }
+  .modal-section { margin-bottom: 22px; }
+  .resumen-text { font-size: 14px; line-height: 1.65; color: var(--text-2); }
+  .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .detail-item label { display: block; font-size: 11px; font-weight: 500; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 3px; }
+  .detail-item span { font-size: 14px; color: var(--text); }
+  .modal-actions { display: flex; gap: 10px; flex-wrap: wrap; padding-top: 20px; border-top: 1px solid var(--border); }
+  .btn-action { flex: 1; min-width: 130px; padding: 11px 18px; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; cursor: pointer; border: none; transition: all 0.15s; text-align: center; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 7px; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: #1d3fc4; }
+  .btn-proceso { background: var(--proceso-bg); color: var(--proceso); border: 1.5px solid var(--proceso); }
+  .btn-rechazado { background: var(--rechazado-bg); color: #6B7280; border: 1.5px solid #D1D5DB; }
+  .btn-rechazado:hover { background: #6B7280; color: #fff; border-color: #6B7280; }
+  .btn-contratado { background: var(--contratado-bg); color: var(--contratado); border: 1.5px solid var(--contratado); }
+  .btn-contratado:hover { background: var(--contratado); color: #fff; }
+  .estado-section-label { font-size: 11px; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+  .btn-proceso:hover { background: var(--proceso); color: #fff; }
+  .btn-proceso.active { background: var(--proceso); color: #fff; }
+  .btn-secondary { background: var(--bg); color: var(--text-2); border: 1.5px solid var(--border); }
+  .btn-secondary:hover { border-color: var(--text-2); color: var(--text); }
+  .proceso-note { font-size: 12px; color: var(--text-3); margin-top: 8px; font-style: italic; }
+  .modal::-webkit-scrollbar { width: 6px; }
+  .modal::-webkit-scrollbar-track { background: transparent; }
+  .modal::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  .btn-nuevo {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 9px 16px; border-radius: var(--radius-sm);
+    background: var(--accent); color: #fff;
+    font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500;
+    border: none; cursor: pointer; white-space: nowrap; transition: background 0.15s; flex-shrink: 0;
+  }
+  .btn-nuevo:hover { background: #1d3fc4; }
+
+  .modal-nuevo { max-width: 540px; }
+
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-full { grid-column: 1 / -1; }
+  .form-group { display: flex; flex-direction: column; gap: 5px; }
+  .form-group label { font-size: 11.5px; font-weight: 500; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.06em; }
+  .form-group input, .form-group select, .form-group textarea {
+    padding: 9px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+    font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--text);
+    background: var(--surface); outline: none; transition: border-color 0.15s;
+  }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--accent); }
+  .form-group textarea { resize: vertical; min-height: 80px; }
+  .form-note { font-size: 12px; color: var(--text-3); margin-top: 4px; }
+  .form-required { color: #EF4444; }
+
+  @media (max-width: 680px) {
+    .header-stats { display: none; }
+    .toolbar { padding: 0 16px; }
+    .grid { padding: 0 16px; }
+    .detail-grid { grid-template-columns: 1fr; }
+    .modal { border-radius: 12px; }
+    .modal-header, .modal-body { padding: 16px 18px; }
+  }
+  .btn-referir-global {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px; font-weight: 600;
+    background: #2563EB; color: #fff;
+    border: none; border-radius: 8px;
+    padding: 9px 18px; cursor: pointer;
+    display: flex; align-items: center; gap: 6px;
+    white-space: nowrap; transition: background 0.15s;
+    margin-left: auto;
+  }
+  .btn-referir-global:hover { background: #1D4ED8; }
+</style>
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <a class="logo" href="#">
+      <div class="logo-mark">RL</div>
+      <div class="logo-text">
+        Referidos Leal
+        <div class="logo-sub">VP AI &amp; Advanced Analytics</div>
+      </div>
+    </a>
+    <div class="header-stats">
+      <div class="stat"><div class="stat-num" id="stat-total">—</div><div class="stat-label">Total</div></div>
+      <div class="stat"><div class="stat-num disp" id="stat-disp">—</div><div class="stat-label">Disponibles</div></div>
+      <div class="stat"><div class="stat-num proc" id="stat-proc">—</div><div class="stat-label">En proceso</div></div>
+
+    </div>
+  </div>
+</header>
+
+<div class="toolbar">
+  <div class="search-wrap">
+    <svg class="search-icon" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <input class="search-input" type="text" id="search" placeholder="Buscar por nombre, cargo, habilidades…">
+  </div>
+  <div class="filter-pills">
+    <button class="pill disponible active" data-estado="Disponible">Disponibles</button>
+    <button class="pill proceso" data-estado="En proceso">En proceso</button>
+    <button class="pill rechazado" data-estado="Rechazado">Rechazados</button>
+    <button class="pill" id="btn-limpiar" style="display:none;border-color:#9CA3AF;color:#6B7280;">&#10005; Limpiar</button>
+  </div>
+  <div class="results-count" id="results-count"></div>
+  <select id="sort-select" style="padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-2);background:var(--surface);cursor:pointer;outline:none;">
+    <option value="fecha-desc">Más recientes primero</option>
+    <option value="fecha-asc">Más antiguos primero</option>
+    <option value="alfa">Alfabético</option>
+  </select>
+  <button class="btn-referir-global" onclick="abrirFormReferir()">&#43; Referir candidato</button>
+</div>
+<div class="filter-bar" id="cargo-filter-bar">
+  <span class="filter-bar-label">Cargo:</span>
+  <button class="pill cargo active" data-cargo="todos">Todos</button>
+  <button class="pill cargo" data-cargo="Data Scientist">Data Scientist</button>
+  <button class="pill cargo" data-cargo="Business Analyst">Business Analyst</button>
+  <button class="pill cargo" data-cargo="Data Engineer">Data Engineer</button>
+  <button class="pill cargo" data-cargo="Manager">Manager</button>
+  <button class="pill cargo" data-cargo="Data Analyst">Data Analyst</button>
+  <button class="pill cargo" data-cargo="AI Lead">AI Lead</button>
+  <button class="pill cargo" data-cargo="Customer Care">Customer Care</button>
+</div>
+
+<div class="grid" id="grid"></div>
+
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal" id="modal">
+    <div class="modal-header">
+      <div class="modal-header-text">
+        <div class="modal-name" id="m-nombre"></div>
+        <div class="modal-badges">
+          <span class="badge" id="m-estado-badge"></span>
+          <span class="card-cargo" id="m-cargo"></span>
+        </div>
+      </div>
+      <button class="btn-close" id="btn-close">&#10005;</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-section" id="m-resumen-section">
+        <div class="section-label">Resumen</div>
+        <p class="resumen-text" id="m-resumen"></p>
+      </div>
+      <div class="modal-section">
+        <div class="section-label">Experiencia y formación</div>
+        <div class="detail-grid">
+          <div class="detail-item"><label>Experiencia</label><span id="m-exp"></span></div>
+          <div class="detail-item"><label>Última empresa</label><span id="m-empresa"></span></div>
+          <div class="detail-item"><label>Último cargo</label><span id="m-ucargo"></span></div>
+          <div class="detail-item"><label>Profesión</label><span id="m-prof"></span></div>
+          <div class="detail-item"><label>Universidad</label><span id="m-uni"></span></div>
+          <div class="detail-item"><label>Referido por</label><span id="m-ref"></span></div>
+        </div>
+      </div>
+      <div class="modal-section" id="m-proceso-section" style="display:none">
+        <div class="section-label">Estado del proceso</div>
+        <div class="detail-grid">
+          <div class="detail-item"><label>Entrevistado por</label><span id="m-entpor"></span></div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <a class="btn-action btn-primary" id="btn-cv" href="#" target="_blank">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          Ver hoja de vida
+        </a>
+        <a class="btn-action btn-secondary" id="btn-linkedin" href="#" target="_blank">
+          <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
+          LinkedIn
+        </a>
+      </div>
+      <div class="modal-estado-actions" id="modal-estado-actions" style="margin-top:12px;"></div>
+      <div class="proceso-note" id="proceso-note" style="display:none"></div>
+    </div>
+  </div>
+</div>
+
+
+<script>
+var CANDIDATOS = [{"nombre":"Diana Marcela Cocuy Bocanegra","referido_por":"Angie Rodríguez","fecha":"2026-01-19","cargo":"Business Analyst","profesion":"Ingeniería Industrial","universidad":"UNIVERSIDAD ESCUELA COLOMBIANA DE CARRERAS INDUSTRIALES.","experiencia":"5 años y medio","ultima_empresa":"WOM (PARTNERS TELECOM COLOMBIA SAS).","ultimo_cargo":"Especialista BI","resumen":"Ingeniera Industrial y Especialista en Analítica Estratégica de Datos, con sólida experiencia en análisis, modelado y visualización de datos para la toma de decisiones, dominio de SQL, Excel avanzado y Power BI. Perfil analítico y orientado a resultados, con participación en iniciativas de Business Intelligence, optimización de procesos y fuerte capacidad de trabajo en equipo y comunicación.","linkedin":"https://www.linkedin.com/in/diana-marcela-cocuy-8b980b176/","entrevistado_por":"Juan David","estado":"Rechazado","cv_file":"202601_HV DIANA MARCELA COCUY BOCANEGRA.pdf"},{"nombre":"Maria Alejandra Moncada Agudelo","referido_por":"Juliana Restrepo","fecha":"2026-01-19","cargo":"Data Scientist","profesion":"Licenciada en Ingeniería Matemática","universidad":"UNIVERSIDAD EAFIT","experiencia":"4 años","ultima_empresa":"Vensure Employer Solutions","ultimo_cargo":"Data Scientist","resumen":"Científico de Datos e Ingeniero Matemático con experiencia en ML, NLP y optimización, aplicando Python, R, SQL y Azure para resolver problemas de negocio. Logros destacados incluyen mejora del ROI de marketing en 20%, reducción de tiempos en ~70% y sólida capacidad para comunicar insights estratégicos a audiencias técnicas y no técnicas.","linkedin":"https://www.linkedin.com/in/alejandra-moncada","entrevistado_por":"","estado":"Disponible","cv_file":"MariaMoncada_englishCV.pdf"},{"nombre":"Andrea Carvajal Maldonado","referido_por":"Juliana Restrepo","fecha":"2026-01-19","cargo":"Data Analyst","profesion":"Licenciada en Ingeniería Matemática","universidad":"UNIVERSIDAD EAFIT","experiencia":"4 años","ultima_empresa":"Vensure Employer Solutions","ultimo_cargo":"Data Analyst","resumen":"Ingeniero matemático bilingüe con fuerte enfoque en análisis de datos, estadística y Machine Learning, con habilidades en Python, R, Matlab, SQL y Power BI. Destaca por su pensamiento lógico, liderazgo, trabajo en equipos interdisciplinarios y comunicación efectiva.","linkedin":"https://www.linkedin.com/in/andreacarvajalm/","entrevistado_por":"","estado":"Disponible","cv_file":"Andrea_Carvajal_CV2025.pdf"},{"nombre":"Eduardo Garcia Llamas","referido_por":"Nicole Castro","fecha":"2026-01-19","cargo":"Data Scientist","profesion":"Ingeniería Industrial para la dirección","universidad":"Universidad Anáhuac Querétaro","experiencia":"5 años y medio","ultima_empresa":"XERTICA.AI","ultimo_cargo":"Data Scientist","resumen":"Científico de Datos con experiencia en los sectores retail y tecnológico, enfocado en aplicar analítica avanzada para identificar oportunidades de crecimiento y eficiencia operativa. Perfil orientado al cliente y a la generación de valor estratégico a partir de los datos.","linkedin":"https://www.linkedin.com/in/egllamas","entrevistado_por":"","estado":"Disponible","cv_file":"CV Eduardo Garcia Llamas.pdf"},{"nombre":"Astaroth Elizabethson","referido_por":"Benjamín León","fecha":"2026-01-19","cargo":"Data Scientist","profesion":"Licenciatura en Física, Licenciatura en Matemáticas","universidad":"Universidad de los Andes","experiencia":"16 años","ultima_empresa":"BACU","ultimo_cargo":"Analista de Control Operacional y Soporte de Datos","resumen":"Físico y matemático con vocación docente, experiencia en educación y programación (Matlab, Java, R y SQL), especializado en Machine Learning supervisado aplicado a bases de datos astronómicas. Destaca por sus habilidades sociales, liderazgo, trabajo en equipo y capacidad para enseñar eficazmente.","linkedin":"https://www.linkedin.com/in/astaroth-elizabethson/","entrevistado_por":"","estado":"Disponible","cv_file":"AstarothCurriculumVitaeInd.pdf"},{"nombre":"Eivar Moreno","referido_por":"Angie Rodríguez","fecha":"2026-01-21","cargo":"CBM Analyst","profesion":"Ingeniería Mecatronica","universidad":"Técnico Central","experiencia":"7 años","ultima_empresa":"WOM (PARTNERS TELECOM COLOMBIA SAS).","ultimo_cargo":"Especialista Self Service","resumen":"Profesional con experiencia en diseño de CX y liderazgo de proyectos de transformación digital, especializado en optimización de procesos mediante modelos de IA. Experto en implementación de IVR, chatbots y automatización conversacional de alto impacto y escalable.","linkedin":"https://www.linkedin.com/in/eivar-aly-moreno-pinz%C3%B3n-531707211/","entrevistado_por":"","estado":"Disponible","cv_file":"HV Eivar Moreno.pdf"},{"nombre":"Diana Carolina Zeledón Quintero","referido_por":"Nicole Castro","fecha":"2026-01-28","cargo":"Data Scientist","profesion":"Ingeniería de Sistemas y Computación","universidad":"Universidad Tecnológica de Panamá","experiencia":"2 años","ultima_empresa":"Cochez y Cia S.A","ultimo_cargo":"Data Scientist","resumen":"Científico de Datos e Ingeniero de Sistemas especializado en IA Generativa, con experiencia en desarrollo y optimización de pipelines de datos y chatbots avanzados. Dominio de Google Cloud Platform (GCP) para impulsar innovación y resolver problemas complejos de negocio.","linkedin":"https://www.linkedin.com/in/diana-carolina-zeled%C3%B3n-03a623263/","entrevistado_por":"Jeanette","estado":"Contratado","cv_file":"DianaZeledon_CV_en_2026.pdf"},{"nombre":"Santiago Tovar","referido_por":"Nicole Castro","fecha":"2026-01-29","cargo":"Data Analytics/BI Engineer.","profesion":"Ingeniería Industrial","universidad":"Universidad de los Andes","experiencia":"5 años y 3 meses","ultima_empresa":"SPACE ANALYTICS","ultimo_cargo":"Founder & Head of Operations","resumen":"Analista de Negocio / Ingeniero de Analítica con más de 5 años de experiencia transformando problemas complejos en soluciones basadas en datos. Especialista en conectar áreas de negocio y equipos técnicos, utilizando SQL, Python, DBT y herramientas de BI para gestionar proyectos de punta a punta, desde el levantamiento de requisitos hasta la entrega de dashboards.","linkedin":"https://linkedin.com/in/santiago-tovar-cardona","entrevistado_por":"Jeanette","estado":"Disponible","cv_file":"Santiago Tovar CV (BA_AnalyticsEngineer).pdf"},{"nombre":"Andrés Guerrero Ortíz","referido_por":"Danilo Plazas","fecha":"2026-02-03","cargo":"Business Analyst","profesion":"Ingeniería de Software (en curso)","universidad":"Corporación Iberoamericana de\nEducación Superior","experiencia":"5 años","ultima_empresa":"Concentrix International Colombia S.A.S","ultimo_cargo":"Professional, Bi Analyst","resumen":"Perfil analítico, proactivo y planificador, con fuerte orientación al trabajo en equipo, comunicación efectiva y compromiso. Persona adaptable, autónoma en el aprendizaje y en constante desarrollo profesional.","linkedin":"https://www.linkedin.com/in/andr%C3%A9s-guerrero-ort%C3%ADz-5473b6203/","entrevistado_por":"","estado":"Disponible","cv_file":"CV. Andrés Guerrero 2026.pdf"},{"nombre":"Sebastian Pineda","referido_por":"Juan Valencia Arias","fecha":"2026-02-11","cargo":"Business Analyst","profesion":"Administración de empresas","universidad":"Universidad del Quindı́o","experiencia":"4 años y medio","ultima_empresa":"Bell","ultimo_cargo":"Sales Specialist","resumen":"Profesional analítico con Maestría en Investigación de Operaciones y Estadística, y más de 5 años de experiencia en sectores financiero y telecomunicaciones. Experto en Python, SQL y Excel para modelar impacto de negocio y generar insights financieros orientados a ROI y eficiencia operativa mediante analítica avanzada.","linkedin":"https://linkedin.com/in/sebastianpinedav/","entrevistado_por":"","estado":"Disponible","cv_file":"CV Sebastian Pineda.pdf"},{"nombre":"Paola Andrea Yepes Zuleta","referido_por":"Santiago Gonzalez Quiroz","fecha":"2026-02-13","cargo":"Business Analyst","profesion":"Ingeniería en productividad y calidad","universidad":"Politécnico Jaime Isaza Cadavid","experiencia":"5 años y medio","ultima_empresa":"AMRIZE BSC (HOLCIM ABS)","ultimo_cargo":"Buyer","resumen":"Ingeniera de Productividad y Calidad con más de 4 años de experiencia en sourcing, análisis de datos y optimización de procesos, enfocado en la construcción de KPIs para la toma de decisiones. Experto en SAP, SIESA, Excel avanzado y herramientas BI (Qlik, Looker), con conocimientos en SQL y Python y alta adaptabilidad a entornos dinámicos orientados a resultados.","linkedin":"https://www.linkedin.com/in/paola-yepes-0aa8701b8/","entrevistado_por":"","estado":"Disponible","cv_file":"CV PAOLA YEPES.pdf"},{"nombre":"Laura Montoya Jaramillo","referido_por":"Santiago Monsalve","fecha":"2026-02-19","cargo":"Business Analyst","profesion":"Economista","universidad":"Universidad EAFIT","experiencia":"7 años y medio","ultima_empresa":"SURA Tech","ultimo_cargo":"Analytics & BI","resumen":"Data Analyst y Especialista BI con experiencia en insurtech y retail, liderando iniciativas de analítica orientadas a maximizar rentabilidad y optimizar procesos comerciales. Experto en segmentación, forecasting y monitoreo de KPIs, con enfoque en insights accionables, liderazgo y trabajo transversal para impulsar innovación y mejora continua.","linkedin":"https://www.linkedin.com/in/laura-montoya-jaramillo/","entrevistado_por":"","estado":"Disponible","cv_file":"CV LAURA MONTOYA J 2026.pdf"},{"nombre":"Jose David Larsen Pantoja","referido_por":"Daniel Castaño","fecha":"2026-03-09","cargo":"Business Analyst","profesion":"Economista","universidad":"Universidad del Valle","experiencia":"9 años","ultima_empresa":"Fondo de Empleados de la Cámara de Comercio de Cali","ultimo_cargo":"Miembro de Junta Directiva","resumen":"Economista con especialización en Finanzas y Maestría en Administración Financiera, con más de 8 años de experiencia en análisis de datos, control de gestión y análisis financiero para la toma de decisiones estratégicas. Actualmente Coordinador Operativo, liderando equipos, modelos analíticos y presupuestales, con fuerte enfoque en storytelling y generación de insights para negocio.","linkedin":"https://linkedin.com/in/jose-david-larsen-01501314a","entrevistado_por":"Juan David","estado":"Contratado","cv_file":"CV_Jose_David_Larsen.pdf"},{"nombre":"Juan Camilo Sutachan Trujillo","referido_por":"Mónica Viveros","fecha":"2026-03-10","cargo":"Data Scientist","profesion":"Ingeniero Mecatrónico","universidad":"Universidad Militar Nueva Granada","experiencia":"4 años","ultima_empresa":"SLB","ultimo_cargo":"Data Engineer","resumen":"Ingeniero Mecatrónico orientado a datos con 4 años de experiencia en automatización, análisis de datos y business intelligence. Experto en soluciones escalables con Python, SQL, Airflow, BigQuery y GCP, destacándose por optimizar operaciones mediante automatización y visualización avanzada impulsada por IA.","linkedin":"https://www.linkedin.com/in/juan-camilo-st/?locale=es_ES","entrevistado_por":"Juan Robles","estado":"Contratado","cv_file":"Resume - Juan Camilo Sutachan Trujillo.pdf"},{"nombre":"Pablo Rey Moreno","referido_por":"Nicole Castro","fecha":"2026-03-30","cargo":"Business Analyst","profesion":"Administración de Empresas","universidad":"Pontifica Universidad Javeriana","experiencia":"5 años","ultima_empresa":"Omni.Pro","ultimo_cargo":"Performance Analyst","resumen":"Analista de Datos y Performance con más de 4 años de experiencia en analítica de marketing, enfocado en medición de desempeño y generación de insights accionables. Especialista en dashboards, KPIs y automatización de reportes, con manejo de Excel y Power BI y fuerte capacidad de comunicación para la toma de decisiones estratégicas.","linkedin":"https://www.linkedin.com/in/pablo-rey-moreno/","entrevistado_por":"Jeanette","estado":"Contratado","cv_file":"CV - Pablo Rey Moreno (5).pdf"},{"nombre":"María Alejandra Dávila S","referido_por":"Daniel Rojo","fecha":"2026-05-08","cargo":"Manager","profesion":"Ingeniera Electrónica","universidad":"Universidad del Norte","experiencia":"10 años","ultima_empresa":"Emtelco","ultimo_cargo":"Consultor líder de IA","resumen":"Experta en Analítica de Datos, BI e IA con más de 12 años de experiencia, enfocada en transformar insights en iniciativas estratégicas de alto impacto. Destaca por su liderazgo de equipos analíticos, pensamiento estratégico y capacidad para alinear la analítica con los objetivos del negocio.","linkedin":"","entrevistado_por":"","estado":"Disponible","cv_file":"María Alejandra Dávila.pdf"},{"nombre":"Kelly Johana Jiménez A","referido_por":"Daniel Rojo","fecha":"2026-05-08","cargo":"Manager","profesion":"Estadística","universidad":"Universidad Nacional de Colombia","experiencia":"12 años","ultima_empresa":"TIGO","ultimo_cargo":"Supervisora de Operación Regional","resumen":"Estadística con Maestría en Ingeniería Analítica y más de 10 años de experiencia liderando iniciativas de advanced analytics, customer experience y analítica predictiva en telecomunicaciones. Experta en SQL, AWS y liderazgo de equipos multidisciplinarios, transformando grandes volúmenes de datos en estrategias de optimización operativa, experiencia de cliente y retención.","linkedin":"","entrevistado_por":"","estado":"Disponible","cv_file":"CV_KellyJohannaJiménezAvalos.pdf"},{"nombre":"Juliana Restrepo Tobar","referido_por":"Gregorio Perez Bernal","fecha":"2026-01-16","cargo":"Data Scientist","profesion":"Ingeniería Matemática","universidad":"Universidad EAFIT","experiencia":"3 años","ultima_empresa":"FinCrime Dynamics","ultimo_cargo":"Data Scientist","resumen":"Ingeniero Matemático con énfasis en Ciencias de la Computación, experto en Python y con experiencia en Java, SQL, MATLAB y R, especializado en herramientas de Machine Learning y analítica avanzada como PyTorch, scikit-learn, AWS y MLflow. Perfil bilingüe/trilingüe con sólida formación técnica y enfoque en desarrollo de soluciones analíticas escalables.","linkedin":"https://linkedin.com/in/julianarpot/","entrevistado_por":"Iván","estado":"Contratado","cv_file":"Juliana Restrepo CV 2025.pdf"},{"nombre":"Andres Villarreal","referido_por":"Rolando Riley","fecha":"2026-03-27","cargo":"Data Engineer","profesion":"Ingeniería de Sistemas de Información","universidad":"Universidad Tecnológica De Panamá","experiencia":"3 años","ultima_empresa":"Signify (Philips Lighting)","ultimo_cargo":"Data Transportation Analyst","resumen":"Profesional orientado a transformar datos en valor para la toma de decisiones, enfocado en garantizar calidad y eficiencia en procesos de análisis de datos. Destaca por su adaptabilidad, trabajo en equipo y aprendizaje continuo para generar soluciones efectivas de negocio.","linkedin":"https://www.linkedin.com/in/andrés-villarreal-7205b2263","entrevistado_por":"Iván","estado":"Contratado","cv_file":"andres_villarreal_cv.pdf"},{"nombre":"Mariana Yepes","referido_por":"Juliana Restrepo","fecha":"2026-05-15","cargo":"Data Scientist","profesion":"Ingeniería Matemática","universidad":"Universidad EAFIT","experiencia":"3 años","ultima_empresa":"Tributi – Fintech Tax Automation SaaS","ultimo_cargo":"Business & Product Analyst","resumen":"Científico de Datos e Ingeniero Matemático con más de 3 años de experiencia desarrollando modelos de ML y deep learning aplicados a problemas operativos reales, con publicación científica en revista Q1 de Elsevier. Destaca por su capacidad para transformar problemas complejos en soluciones accionables y comunicar insights a equipos técnicos y de negocio.","linkedin":"","entrevistado_por":"","estado":"Disponible","cv_file":"Mariana_Yepes_CV_LLA_DataScientist.pdf"},{"nombre":"Juan Franco","referido_por":"Andrés Villareal","fecha":"2026-06-09","cargo":"Data Engineer","profesion":"Ingeniería de Sistemas de Información","universidad":"Universidad Tecnológica De Panamá","experiencia":"3 años","ultima_empresa":"The Estée Lauder Companies Inc.","ultimo_cargo":"Business Intelligence & Analytics Analyst","resumen":"Data Engineer con más de 3 años de experiencia diseñando y operando pipelines de datos end-to-end en Azure Databricks, especializado en arquitecturas Medallion, ETL/ELT y modelado de datos. Destaca por desarrollar soluciones escalables y de nivel productivo, colaborando con equipos de analítica, ciencia de datos y negocio para generar productos de datos confiables y de alto impacto.","linkedin":"https://www.linkedin.com/in/juan-franco-aa0571337/","entrevistado_por":"","estado":"Disponible","cv_file":"CV Juan Franco.pdf"},{"nombre":"Leonardo Franco","referido_por":"José Zerna","fecha":"2026-06-09","cargo":"Data Engineer","profesion":"Licenciatura en Ciberseguridad","universidad":"Universidad Tecnológica De Panamá","experiencia":"2 años","ultima_empresa":"Edupan S.A.","ultimo_cargo":"Staff Software & Data Engineer","resumen":"Data & Cloud Engineer con más de 2 años de experiencia en diseño y operación de pipelines de datos e infraestructura cloud en GCP y AWS, utilizando Airflow, Spark, Databricks, Terraform y Kubernetes. Destaca por desarrollar soluciones escalables bajo prácticas DevSecOps, automatización mediante Infraestructura como Código (IaC) y despliegue de plataformas reutilizables de alto impacto.","linkedin":"https://linkedin.com/in/l-franco28","entrevistado_por":"","estado":"Disponible","cv_file":"Leonardo_Franco_DataEngineer.pdf"},{"nombre":"Juan José Eraso","referido_por":"Daniel Castaño","fecha":"2026-02-19","cargo":"Business Analyst","profesion":"Economista","universidad":"Universidad del Valle","experiencia":"1 año y medio","ultima_empresa":"Cámara de Comercio de Cali","ultimo_cargo":"Economic & Business Intelligence Analyst","resumen":"Economista y analista de datos con experiencia en segmentación de clientes, inteligencia de negocios y automatización de procesos analíticos. Especializado en transformar grandes volúmenes de datos en información estratégica para la toma de decisiones comerciales y la gestión del valor del cliente. Con conocimientos en Python, SQL y técnicas de Machine Learning aplicadas a modelos de clustering y segmentación. Orientado a resultados, con enfoque en la eficiencia operativa, el análisis de rentabilidad y el desarrollo de estrategias que impulsen la retención de clientes y el crecimiento de los ingresos.","linkedin":"https://linkedin.com/in/juan-eraso-479850298","entrevistado_por":"Pablo Fajardo","estado":"En proceso","cv_file":"CV_JuanJoseEraso_EN_ATS.pdf"},{"nombre":"Eber David Baracaldo Galeano","referido_por":"Julián Acevedo","fecha":"2026-02-19","cargo":"Business Analyst","profesion":"Economista","universidad":"Universidad Nacional de Colombia","experiencia":"3 años","ultima_empresa":"Solvo S.A.S.","ultimo_cargo":"Reporting Analyst","resumen":"Economista y Reporting Analyst con experiencia en análisis operativo, inteligencia de negocios y automatización de procesos orientados a la toma de decisiones basada en datos. Especializado en el desarrollo de soluciones analíticas mediante Python, SQL, Microsoft Fabric, Power BI y Power Automate, diseñando pipelines de datos, dashboards ejecutivos y flujos automatizados que han logrado reducir hasta en un 98% los tiempos de ejecución y adelantar entregas hasta 14 días antes de los plazos establecidos. Experiencia en la estructuración, depuración y análisis de datos críticos, optimización de modelos de cálculo y soporte técnico transversal a equipos operativos, contribuyendo a la eficiencia operativa, la mejora continua y la generación de valor para el negocio.","linkedin":"https://linkedin.com/in/eberbaracaldo","entrevistado_por":"","estado":"Disponible","cv_file":"CVEBERDAVIDBARACALDOGALEANO.pdf"},{"nombre":"Juan David Marín Gómez","referido_por":"Pablo Fajardo","fecha":"2026-06-24","cargo":"Data Scientist","profesion":"Ingeniería Aeronáutica","universidad":"Universidad Pontificia\nBolivariana","experiencia":"7 años","ultima_empresa":"Asurion","ultimo_cargo":"Business Intelligence & Data Analyst","resumen":"Analista de Datos enfocado en analítica operativa y de negocio, con experiencia en gestión de activos, optimización de procesos y análisis de indicadores de desempeño. Especializado en transformar datos en información accionable que facilite la toma de decisiones estratégicas y la mejora continua de las operaciones. Cuenta con experiencia en monitoreo de KPIs, automatización de procesos, coordinación de proyectos y análisis de métricas operativas. Destaca por su capacidad analítica, pensamiento crítico y orientación a resultados. Actualmente fortalece sus competencias en SQL, Python, Power BI, Excel Avanzado y técnicas de análisis de datos para generar soluciones de alto impacto empresarial.","linkedin":"","entrevistado_por":"Pablo Fajardo","estado":"En proceso","cv_file":"Juan david marín gómez CV EN.pdf"},{"nombre":"Juan Idarraga","referido_por":"Pablo Fajardo","fecha":"2026-06-24","cargo":"Data Scientist","profesion":"Ingeniero Químico","universidad":"Universidad Nacional de Colombia","experiencia":"3 años","ultima_empresa":"LeoVegas Group","ultimo_cargo":"Live Trader - Sports data analysis","resumen":"Científico de Datos Junior con más de un año de experiencia desarrollando modelos predictivos y soluciones analíticas para la toma de decisiones. Experiencia en modelos de clasificación y regresión utilizando scikit-learn, XGBoost, árboles de decisión y Random Forest. Manejo de Python y librerías como pandas, NumPy, matplotlib, seaborn, statsmodels y scipy para análisis exploratorio y modelado estadístico. Capacidad para desarrollar pipelines de datos de extremo a extremo, desde el preprocesamiento hasta el despliegue de modelos. Experiencia en detección de anomalías, reconocimiento de patrones y monitoreo en tiempo real, transformando datos complejos en información accionable para el negocio.","linkedin":"","entrevistado_por":"","estado":"Disponible","cv_file":"CV_Juan_Idarraga.pdf"},{"nombre":"Andrés Felipe González Calderón","referido_por":"Jamis Garzón","fecha":"2026-06-24","cargo":"Data Scientist","profesion":"Diseñador Gráfico","universidad":"Universidad Jorge Tadeo Lozano","experiencia":"6 años","ultima_empresa":"Lean Solutions Group","ultimo_cargo":"Coordinador Logístico de Datos","resumen":"Profesional bilingüe (Inglés B2) con más de 5 años de experiencia liderando operaciones logísticas y transformando grandes volúmenes de información en decisiones estratégicas. Especialista en Análisis de Datos y en el desarrollo e integración de Agentes de IA para la automatización de procesos. Experto en Python, SQL, Power BI y orquestación de datos. Capacidad demostrada para optimizar la eficiencia operativa, diseñar pipelines de datos y generar soluciones tecnológicas orientadas al negocio.","linkedin":"","entrevistado_por":"","estado":"Disponible","cv_file":"Hoja de Vida Andrés AD.pdf"},{"nombre":"Daniel Donado","referido_por":"Nicole Castro","fecha":"2026-06-26","cargo":"Business Analyst","profesion":"Ingeniero Industrial","universidad":"Universidad de los Andes","experiencia":"4 años","ultima_empresa":"SourceForge","ultimo_cargo":"Software Marketing Specialist","resumen":"Profesional en Ingeniería Industrial con experiencia en operaciones, gestión comercial y coordinación de proyectos. Ha desempeñado roles de atención y gestión de clientes, apoyando a empresas de software en el análisis del desempeño de productos y la identificación de oportunidades de crecimiento. Cuenta con habilidades en optimización de procesos, gestión de CRM, análisis de datos y trabajo colaborativo con equipos multidisciplinarios. Orientado a resultados, con enfoque en la eficiencia operativa, la generación de valor para el cliente y el fortalecimiento de relaciones comerciales de largo plazo.","linkedin":"","entrevistado_por":"Pablo Fajardo","estado":"En proceso","cv_file":"Daniel_Donado.pdf"},{"nombre":"Santiago Henao U.","referido_por":"Erick Translateur","fecha":"2026-06-26","cargo":"Business Analyst","profesion":"Ingeniero Industrial","universidad":"Universidad de los Andes","experiencia":"9 años","ultima_empresa":"NU Bank","ultimo_cargo":"Senior Business Analyst, Global Core Banking","resumen":"Profesional en Estrategia de Datos con más de 8 años de experiencia utilizando analítica, visión de producto e insights operativos para resolver problemas de negocio en sectores como fintech, retail, banca, e-commerce y SaaS. Cuenta con experiencia en consultoría, investigación de mercados y organizaciones tecnológicas de alto crecimiento. Especializado en conectar áreas de negocio y equipos técnicos, definir marcos de indicadores (KPIs), mejorar la calidad de los datos y transformar análisis complejos en recomendaciones accionables. Orientado a generar impacto en productos, procesos, políticas y resultados de negocio mediante el uso estratégico de los datos","linkedin":"","entrevistado_por":"","estado":"Disponible","cv_file":"CV SHU English 2026.pdf"},{"nombre":"Felipe De Ycaza Dutari","referido_por":"Nicole Castro","fecha":"2026-06-29","cargo":"Business Analyst","profesion":"Administración De Negocios Y Logística","universidad":"ADEN University","experiencia":"5 años","ultima_empresa":"HEINEKEN Panama","ultimo_cargo":"Supervisor De Asociación Comercial Y Operaciones,","resumen":"Supervisor de Operaciones Comerciales con experiencia en liderazgo de equipos, gestión de proyectos y optimización de procesos. Trayectoria en compañías de consumo masivo liderando iniciativas multifuncionales, fortaleciendo relaciones con clientes y grupos de interés, e impulsando mejoras operativas. Especializado en desarrollo de negocios, ejecución comercial, gestión de alianzas estratégicas y coordinación organizacional. Orientado a resultados, con capacidad para identificar oportunidades de crecimiento, mejorar la eficiencia operativa y garantizar el cumplimiento de objetivos comerciales. Dominio de español e inglés.","linkedin":"","entrevistado_por":"","estado":"Disponible","cv_file":"Felipe_DeYcazaDutari_Resume_Español (2).pdf"},{"nombre":"Carlos Jesús González Cerrud","referido_por":"Nicole Castro","fecha":"2026-06-29","cargo":"Data Scientist","profesion":"Licenciatura En Ingeniería en Sistemas y Computación","universidad":"Universidad Tecnológica de Panamá","experiencia":"2 años","ultima_empresa":"ASSA Compañia de Seguros","ultimo_cargo":"Ingeniero de Datos","resumen":"Ingeniero en Sistemas enfocado en ingeniería de datos y modernización de plataformas analíticas. Experiencia en construcción de pipelines de datos, ingestión desde múltiples fuentes y modelado de datasets utilizando Databricks y dbt para soportar analítica y reporting empresarial.","linkedin":"https://www.linkedin.com/in/cxrlosjesus","entrevistado_por":"","estado":"Disponible","cv_file":"cv_carlos_jesus.pdf"},{"nombre":"Alexander Vega Carvajal","referido_por":"(Reservado)","fecha":"2026-07-07","cargo":"Data Scientist","profesion":"Economista","universidad":"Universidad de los Andes","experiencia":"10 años","ultima_empresa":"Kilimo","ultimo_cargo":"Data Scientist","resumen":"Economista con experiencia en el desarrollo de soluciones de Machine Learning e integración de datos para organizaciones del sector público y privado. Especializado en Python, SQL avanzado, modelado y análisis de datos, con conocimientos en visualización mediante Power BI y estadística aplicada. Cuenta con experiencia en el desarrollo y despliegue de modelos de ML en AWS, construcción de pipelines ETL/ELT e implementación de soluciones de IA generativa. Destaca por su capacidad para convertir datos en información estratégica y apoyar la toma de decisiones mediante indicadores de negocio (KPIs).","linkedin":"","entrevistado_por":"","estado":"Disponible","cv_file":"CV_Alexander_Vega_2026_ES.pdf"},{"nombre":"Andrés Eduardo Guevara","referido_por":"(Reservado)","fecha":"2026-07-07","cargo":"Data Scientist","profesion":"Ingeniería de Sistemas","universidad":"Fundación Universitaria Los Libertadores","experiencia":"10 años","ultima_empresa":"DIAN","ultimo_cargo":"Analista III QA)","resumen":"Ingeniero de Sistemas con experiencia en administración, mantenimiento y análisis de bases de datos SQL y Oracle, incluyendo actualización, inserción y generación de informes para apoyar los procesos del negocio. Especializado en la organización, digitalización y resguardo de información, garantizando acceso eficiente y confidencialidad de los datos. Cuenta con experiencia trabajando en conjunto con equipos de Administración de Bases de Datos para desarrollar reportes útiles para la empresa, manejo de versiones SQL Server 2008 y Oracle en adelante, así como herramientas de gestión y testing como JIRA. Destaca por su capacidad analítica, trabajo en equipo, planificación y orientación al cumplimiento de políticas y procedimientos.","linkedin":"","entrevistado_por":"","estado":"Disponible","cv_file":"HojaDeVidaAEGA2026.pdf"},{"nombre":"Juan José Ariza","referido_por":"(Reservado)","fecha":"2026-07-07","cargo":"Data Engineer","profesion":"Ingeniería de Sistemas","universidad":"Universidad Pedagógica y Tecnológica de Colombia","experiencia":"4 años","ultima_empresa":"Publicis Groupe","ultimo_cargo":"ML Ops Analyst","resumen":"Ingeniero de Sistemas y Computación con más de 3 años de experiencia en ingeniería de datos, automatización de procesos, desarrollo de software y Business Intelligence. Especializado en el diseño de pipelines de datos (ETL/ELT) con Python y SQL, modelado y administración de bases de datos, integración de APIs y desarrollo de dashboards en Power BI para la toma de decisiones. Cuenta con experiencia en MLOps, despliegue de soluciones en la nube (Google Cloud y Docker) y gestión de modelos de inteligencia artificial, incluyendo LLMs. Orientado a transformar datos en soluciones que generen valor para el negocio.","linkedin":"https://linkedin.com/in/juan-arizaaa46541b5","entrevistado_por":"","estado":"Disponible","cv_file":"CV_Juan_Ariza.pdf"},{"nombre":"Miguel Eduardo Rodríguez","referido_por":"(Reservado)","fecha":"2026-07-07","cargo":"Data Engineer","profesion":"Ingeniero Industrial","universidad":"Universidad de la Costa Barranquilla","experiencia":"3 años","ultima_empresa":"Coopidrogas","ultimo_cargo":"Profesional BI","resumen":"Ingeniero Industrial con experiencia en analítica de datos e inteligencia de negocios. Especializado en el desarrollo de dashboards con Power BI, Tableau y Looker Studio, así como en la consulta y administración de bases de datos en MySQL, SQL Server y PostgreSQL. Cuenta con conocimientos en Python para el desarrollo de procesos ETL y la implementación de modelos de Machine Learning. Destaca por su capacidad analítica, proactividad, adaptabilidad a entornos ágiles y enfoque en la generación de soluciones basadas en datos para apoyar la toma de decisiones.","linkedin":"","entrevistado_por":"","estado":"Disponible","cv_file":"Hoja de vida - Miguel Rodríguez.pdf"},{"nombre":"Francisco Ocampo","referido_por":"(Reservado)","fecha":"2026-07-07","cargo":"Data Scientist","profesion":"Ingeniería de Sistemas","universidad":"Universidad Nacional de Colombia","experiencia":"1 año","ultima_empresa":"Meddipay","ultimo_cargo":"Data Scientist","resumen":"Ingeniero de Sistemas con experiencia en inteligencia artificial, aprendizaje automático y analítica de datos, especializado en el desarrollo de soluciones para evaluación de riesgo crediticio y analítica financiera. Cuenta con experiencia en la construcción de modelos predictivos, redes neuronales, sistemas de análisis de datos, automatización de procesos y aplicaciones basadas en modelos de lenguaje (LLMs). Ha participado en proyectos multidisciplinarios relacionados con física computacional, neurociencia, sistemas dinámicos y procesamiento digital de imágenes. Orientado a desarrollar soluciones tecnológicas basadas en datos para apoyar la toma de decisiones estratégicas.","linkedin":"https://linkedin.com/in/franciscoocampob","entrevistado_por":"","estado":"Disponible","cv_file":"Francisco_Ocampo_CV_EN.pdf"},{"nombre":"Taniah Zoel Poveda Suárez","referido_por":"(Reservado)","fecha":"2026-07-07","cargo":"Data Scientist","profesion":"Ingeniería de Sistemas","universidad":"Fundación Universitaria Juan de Castellanos","experiencia":"3 años","ultima_empresa":"NGP Technologies SAS","ultimo_cargo":"Desarrolladora FullStack — Freelance","resumen":"Ingeniera de Sistemas con sólida experiencia en automatización de pruebas, desarrollo FullStack y fundamentos de ciencia de datos. Participé en un proyecto de investigación en Machine Learning aplicado a educación (tesis meritoria). Habilidades en Python, Java, SQL, Power BI, APIs REST y metodologías ágiles. Orientada a transformar datos en soluciones de alto impacto en entornos corporativos y de consultoría.","linkedin":"","entrevistado_por":"","estado":"Disponible","cv_file":"Taniah Zoel Poveda DataScientist Artefact.docx"},{"nombre":"DidierAlexander Motta","referido_por":"(Reservado)","fecha":"2026-07-07","cargo":"Data Scientist","profesion":"Economista","universidad":"Universidad Pedagógica y Tecnológica de Colombia","experiencia":"4 años","ultima_empresa":"Banco de la República","ultimo_cargo":"Profesional — Sector Externo","resumen":"Economista y Magíster en Finanzas con experiencia en banca central y análisis de datos macroeconómicos y financieros. Especializado en el procesamiento y análisis de grandes volúmenes de información para apoyar la toma de decisiones de política económica y financiera. Cuenta con sólidos conocimientos en herramientas de automatización, visualización de datos e inteligencia artificial aplicada, orientados a optimizar procesos analíticos e investigativos. Destaca por su capacidad para transformar datos complejos en información estratégica de alto valor para la toma de decisiones.","linkedin":"https://www.linkedin.com/in/didier-alexander-motta-molina-007434282/","entrevistado_por":"","estado":"Disponible","cv_file":"HV_Didier_Motta.pdf"},{"nombre":"Juan Carlos Romero Reina","referido_por":"(Reservado)","fecha":"2026-07-07","cargo":"Data Scientist","profesion":"Matemáticas aplicadas","universidad":"Pontificia Universidad Javeriana","experiencia":"10 años","ultima_empresa":"Rappi","ultimo_cargo":"Senior Data Scientist II","resumen":"Científico de Datos Senior y Matemático Aplicado con más de 10 años de experiencia desarrollando soluciones de analítica avanzada y aprendizaje automático para sectores como finanzas, seguros, industria e investigación. Especializado en sistemas de recomendación, modelos predictivos, series de tiempo, aprendizaje por ensamble y soluciones basadas en modelos de lenguaje (LLMs). Cuenta con experiencia liderando equipos técnicos, implementando plataformas MLOps en Azure ML y Databricks, y comunicando resultados analíticos a niveles ejecutivos. Destaca por su sólida formación en matemáticas aplicadas y su capacidad para desarrollar soluciones de alto impacto orientadas al negocio.","linkedin":"https://linkedin.com/in/juan-romero-r","entrevistado_por":"","estado":"Disponible","cv_file":"CV Juan Romero 2026.docx"},{"nombre":"Adrián Nicolás Chamorro","referido_por":"Jamis Garzón","fecha":"2026-07-07","cargo":"Data Scientist","profesion":"Ingeniería Física","universidad":"Universidad Nacional de Colombia","experiencia":"8 años","ultima_empresa":"AGROSAVIA","ultimo_cargo":"Profesional de Apoyo a la Investigación","resumen":"Ingeniero Físico y Especialista en Analítica de Datos con experiencia en procesamiento, transformación y análisis de grandes volúmenes de información mediante Python y SQL. Especializado en Business Analytics, Machine Learning y desarrollo de modelos predictivos para optimizar procesos y apoyar la toma de decisiones. Cuenta con experiencia en la construcción de pipelines ETL, automatización de procesos, análisis exploratorio de datos y desarrollo de dashboards en Power BI y Shiny. Destaca por su capacidad para identificar oportunidades de mejora mediante técnicas estadísticas y generar soluciones escalables orientadas al negocio.","linkedin":"","entrevistado_por":"","estado":"Disponible","cv_file":"Hoja_de_Vida_Adrian_Chamorro.pdf"},{"nombre":"Felipe Penagos","referido_por":"(Reservado)","fecha":"2026-07-07","cargo":"Data Scientist","profesion":"Ingeniería Electrónica","universidad":"Universidad Distrital Francisco José de Caldas","experiencia":"4 años","ultima_empresa":"Hitss ‑ Claro Colombia","ultimo_cargo":"Científico de Datos","resumen":"Científico de Datos con más de 2 años de experiencia en los sectores de tecnología y telecomunicaciones, especializado en analítica predictiva y modelado estadístico para optimizar la retención de clientes, la segmentación y la predicción de abandono (churn). Cuenta con experiencia en el procesamiento de grandes volúmenes de datos utilizando Python, SQL, PySpark y Databricks, así como en el desarrollo de modelos de Machine Learning con scikit-learn y XGBoost. Orientado a transformar datos en estrategias de negocio que impulsen la eficiencia operativa, el crecimiento de ingresos y la mejora de la experiencia del cliente.","linkedin":"https://www.linkedin.com/in/felipe-penagos-rodr%C3%ADguez/","entrevistado_por":"","estado":"Disponible","cv_file":"CV_es_Felipe_Penagos_2025.pdf"},{"nombre":"Iván Barbero","referido_por":"Francisco Kehrhahn","fecha":"2026-07-13","cargo":"AI Lead","profesion":"Ingeniería Electrónica","universidad":"Universidad Tecnológica de Panamá","experiencia":"9 años","ultima_empresa":"IT Consultant - LATAM North","ultimo_cargo":"Ernst & Young","resumen":"Consultor de Tecnología Bilingüe con más de 7 años de experiencia liderando iniciativas de transformación digital y proyectos de medios de pago en América Latina. Especializado en traducir objetivos de negocio en planes de implementación, coordinando equipos multidisciplinarios y gestionando proyectos tecnológicos de gran escala en entornos altamente regulados. Cuenta con experiencia en relacionamiento con ejecutivos y proveedores, combinando conocimientos de consultoría, tecnología y gestión operativa. Destaca por el uso de inteligencia artificial y automatización para optimizar procesos, mejorar la productividad y fortalecer la ejecución de proyectos.","linkedin":"https://linkedin.com/in/ivánbarbero","entrevistado_por":"","estado":"Disponible","cv_file":"Resume - Ivan Barbero.pdf"},{"nombre":"Kevin Danilo Serrano Abril","referido_por":"Sebastian Tejada","fecha":"2026-07-14","cargo":"Data Scientist","profesion":"Estadística","universidad":"Universidad Nacional de Colombia","experiencia":"8 años","ultima_empresa":"Data Technical Lead","ultimo_cargo":"BPT","resumen":"Ingeniero de Datos Senior con más de 7 años de experiencia en ingeniería y analítica de datos. Especializado en el diseño de procesos ETL, migración de data warehouses y desarrollo de modelos predictivos utilizando Machine Learning. Cuenta con experiencia en Databricks, Azure y Power BI, liderando proyectos bajo metodologías ágiles y colaborando con equipos multidisciplinarios. Destaca por su capacidad analítica, enfoque estratégico y orientación a la mejora continua, desarrollando soluciones innovadoras que generan valor para el negocio.","linkedin":"","entrevistado_por":"","estado":"Disponible","cv_file":"CV Kevin Serrano 2026-2.pdf"},{"nombre":"Candelaria Valencia Montoya","referido_por":"Angie Rodríguez","fecha":"2026-07-16","cargo":"Customer Care","profesion":"Comunicación Social - Periodismo","universidad":"Universidad Pontificia Bolivariana.","experiencia":"9 años","ultima_empresa":"Gerente Operaciones Servicio al Cliente","ultimo_cargo":"Avianca","resumen":"Comunicadora Social y Magíster en Mercadeo con más de 12 años de experiencia liderando estrategias de servicio y experiencia del cliente en los sectores de transporte y moda. Ha gestionado equipos multiculturales en Latinoamérica, liderando equipos directos e indirectos para fortalecer la satisfacción y fidelización de clientes. Especializada en gestión de servicio, resolución de crisis, liderazgo y relacionamiento con clientes de alto valor. Cuenta con experiencia en herramientas digitales, plataformas de atención al cliente y uso de inteligencia artificial para mejorar la productividad y la experiencia del cliente.","linkedin":"https://www.linkedin.com/in/candelaria-valencia/","entrevistado_por":"","estado":"Disponible","cv_file":"CV- Candelaria Valencia M Jul 2026.docx.pdf"},{"nombre":"Sonia Olaya","referido_por":"Jamis Garzón","fecha":"2026-07-22","cargo":"Data Scientist","profesion":"Ingeniería Industrial","universidad":"Universidad de la Salle","experiencia":"5 años y medio","ultima_empresa":"Consultor Analítica","ultimo_cargo":"Claro Colombia","resumen":"Ingeniera Industrial con Maestría en Inteligencia Analítica de Datos y experiencia en análisis de datos, aprendizaje automático y arquitectura en la nube. Especializada en el desarrollo de modelos analíticos utilizando Python, SQL, Tableau y bases de datos, aplicando metodologías como CRISP-DM y prácticas de MLOps. Cuenta con conocimientos en Machine Learning, Deep Learning y Procesamiento de Lenguaje Natural (NLP). Destaca por su capacidad analítica, liderazgo, adaptabilidad y orientación al desarrollo de soluciones basadas en datos para la toma de decisiones.","linkedin":"https://linkedin.com/in/soniaolaya/","entrevistado_por":"","estado":"Disponible","cv_file":"CV_Español_Sonia_Olaya_2026.pdf"},{"nombre":"Manuela Salazar Iglesias","referido_por":"Santiago Quiroz","fecha":"2026-07-30","cargo":"Data Scientist","profesion":"Ingeniería Química","universidad":"Universidad Nacional de Colombia","experiencia":"5 años y medio","ultima_empresa":"DS Engineer","ultimo_cargo":"Mercado Libre","resumen":"Científico de Datos e Ingeniero de Machine Learning con más de 5 años de experiencia desarrollando soluciones de analítica avanzada e inteligencia artificial para los sectores financiero, comercio electrónico, salud y consumo masivo. Especializado en liderar proyectos de extremo a extremo, desde el diseño e implementación de modelos predictivos hasta la comunicación de resultados a niveles ejecutivos. Cuenta con experiencia en el uso de herramientas y agentes de IA para acelerar el análisis y la toma de decisiones. Posee una Maestría en Inteligencia Artificial y un enfoque orientado a generar impacto de negocio mediante soluciones basadas en datos.","linkedin":"","entrevistado_por":"","estado":"Disponible","cv_file":"CV_ManuelaSalazar__English_ (1).pdf"},{"nombre":"Luz Aponte Bocanegra","referido_por":"Jamis Garzón","fecha":"2026-08-11","cargo":"Data Scientist","profesion":"Estadística","universidad":"Universidad Nacional de Colombia","experiencia":"14 años","ultima_empresa":"Keyrus","ultimo_cargo":"Consultor Ciencia de Datos","resumen":"Profesional en Estadística con Maestría en Finanzas Corporativas y amplia experiencia en analítica avanzada y estrategia de datos en los sectores financiero, cobranzas y consultoría. Especializado en Data Mining, Machine Learning y Deep Learning, desde la conceptualización hasta el despliegue y automatización de soluciones mediante R, Python y SQL. Cuenta con experiencia en Big Data, herramientas cloud y desarrollo de dashboards en Power BI y Looker. Ha liderado equipos multidisciplinarios, alineando capacidades analíticas con objetivos de negocio para generar rentabilidad y valor a partir de los datos.","linkedin":"https://www.linkedin.com/in/luz-aponte-bocanegra/","entrevistado_por":"","estado":"Disponible","cv_file":"Luz Aponte Bocanegra.pdf"}];
+</script>
+<script>
+(function() {
+  // Firebase config
+  const firebaseConfig = {
+    apiKey: "AIzaSyBwZXPv8cZL9H0D2wwjgYb7jBEi9yoN9hQ",
+    authDomain: "referidos-leal.firebaseapp.com",
+    databaseURL: "https://referidos-leal-default-rtdb.firebaseio.com",
+    projectId: "referidos-leal",
+    storageBucket: "referidos-leal.firebasestorage.app",
+    messagingSenderId: "435417996161",
+    appId: "1:435417996161:web:b4016b4562f600516f2680"
+  };
+  if (!window._fbApp) {
+    window._fbApp = firebase.initializeApp(firebaseConfig);
+  }
+  const db = firebase.database(window._fbApp);
+  const FB_REF = 'estados';
+  const FB_HIST = 'historial';
+
+  function loadOverrides() { return {}; }
+  function saveOverrides(obj) {
+    db.ref(FB_REF).set(obj).catch(function(e) { console.warn('Firebase write error:', e); });
+  }
+  function logHistorial(candidatoNombre, accion, actor, actorCargo) {
+    var entry = { accion: accion, actor: actor || 'Gerente', fecha: new Date().toISOString() };
+    if (actorCargo) entry.cargo = actorCargo;
+    db.ref(FB_HIST + '/' + candidatoNombre).push(entry).catch(function(e) { console.warn('Historial write error:', e); });
+  }
+
+  let candidatos = [], filtered = [], overrides = {}, currentFilter = 'Disponible', currentCargo = 'todos', currentSearch = '', currentIdx = null;
+
+  // Load overrides from Firebase on start, then render
+  db.ref(FB_REF).once('value').then(function(snap) {
+    overrides = snap.val() || {};
+    candidatos = CANDIDATOS.filter(function(c) { var e = estadoEfectivo(c); return e !== 'Contratado' && e !== 'Desistió'; });
+    updateStats(candidatos);
+    applyFilters();
+  });
+
+  // Listen for real-time changes from other users
+  db.ref(FB_REF).on('value', function(snap) {
+    overrides = snap.val() || {};
+    updateStats(candidatos);
+    applyFilters();
+  });
+
+  function estadoEfectivo(c) { return overrides[c.nombre] ? (overrides[c.nombre].estado || 'En proceso') : (c.estado || 'Disponible'); }
+  function estadoClass(e) {
+    const m = { 'Disponible': 'disponible', 'En proceso': 'en-proceso', 'Contratado': 'contratado', 'Rechazado': 'rechazado' };
+    return m[e] || 'disponible';
+  }
+  function estadoLabel(e) { if (!e || e === 'None') return 'Disponible'; return e; }
+
+  function updateStats(data) {
+    var disp = data.filter(c => estadoEfectivo(c) === 'Disponible').length;
+    var proc = data.filter(c => estadoEfectivo(c) === 'En proceso').length;
+    document.getElementById('stat-total').textContent = disp + proc;
+    document.getElementById('stat-disp').textContent = disp;
+    document.getElementById('stat-proc').textContent = proc;
+  }
+
+  function notifyAdmin(nombre, nuevoEstado) {
+    var asunto = encodeURIComponent('Referidos Leal – Actualización estado: ' + nombre);
+    var cuerpo = 'Hola Jamis,\n\nTe informo que el candidato ' + nombre + ' ha sido marcado como: ' + nuevoEstado + '.\n\nPor favor actualiza el estado en la base de datos.\n\nSaludos';
+    window.location.href = 'mailto:jamis.garzon@lla.com?subject=' + asunto + '&body=' + encodeURIComponent(cuerpo);
+  }
+
+  function renderEstadoActions(container, c, est, note) {
+    container.innerHTML = '';
+    var label = document.createElement('div');
+    label.className = 'estado-section-label';
+    label.textContent = 'Actualizar estado';
+    container.appendChild(label);
+    var row = document.createElement('div');
+    row.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;';
+    container.appendChild(row);
+
+    function makeBtn(text, cls, onClick) {
+      var b = document.createElement('button');
+      b.className = 'btn-action ' + cls;
+      b.style.flex = '1';
+      b.innerHTML = text;
+      b.addEventListener('click', onClick);
+      return b;
+    }
+
+    if (est === 'Disponible') {
+      row.appendChild(makeBtn('&#9200; Marcar en proceso', 'btn-proceso', function() {
+        var _c = c; var _idx = currentIdx;
+        showFormGerente(_c.nombre, function(gNombre, gCargo) {
+          overrides[_c.nombre] = { estado: 'En proceso', fecha: new Date().toISOString(), gerente_nombre: gNombre, gerente_cargo: gCargo };
+          saveOverrides(overrides);
+          logHistorial(_c.nombre, 'En proceso', gNombre, gCargo);
+          updateStats(candidatos); applyFilters(); openModal(_idx);
+        });
+      }));
+
+    } else if (est === 'En proceso') {
+      var marcadoLocal = overrides[c.nombre];
+      if (marcadoLocal) {
+        // Allow undo
+        (function(_c3, _idx3) {
+          row.appendChild(makeBtn('&#8635; Desmarcar proceso', 'btn-secondary', function() {
+            showFormGerente(_c3.nombre, function(gNombre, gCargo) {
+              delete overrides[_c3.nombre]; saveOverrides(overrides);
+              logHistorial(_c3.nombre, 'Desmarcado (vuelve a Disponible)', gNombre, gCargo);
+              updateStats(candidatos); applyFilters();
+              var _ni = filtered.findIndex(function(x){return x.nombre===_c3.nombre;});
+              if (_ni >= 0) openModal(_ni); else closeModal();
+            });
+          }));
+        })(c, currentIdx);
+      } else {
+        var info = document.createElement('span');
+        info.style.cssText = 'font-size:12px;color:var(--text-3);align-self:center;';
+        info.textContent = 'Estado registrado en la base de datos.';
+        row.appendChild(info);
+      }
+      (function(_c4, _idx4) {
+        row.appendChild(makeBtn('&#10003; Contratado', 'btn-contratado', function() {
+          showFormGerente(_c4.nombre, function(gNombre, gCargo) {
+            overrides[_c4.nombre] = { estado: 'Contratado', fecha: new Date().toISOString() };
+            saveOverrides(overrides);
+            logHistorial(_c4.nombre, 'Contratado', gNombre, gCargo);
+            updateStats(candidatos); applyFilters();
+            var _ni = filtered.findIndex(function(x){return x.nombre===_c4.nombre;});
+            if (_ni >= 0) openModal(_ni); else closeModal();
+          });
+        }));
+      })(c, currentIdx);
+      (function(_c5, _idx5) {
+        row.appendChild(makeBtn('&#10005; Rechazado', 'btn-rechazado', function() {
+          showFormGerente(_c5.nombre, function(gNombre, gCargo) {
+            overrides[_c5.nombre] = { estado: 'Rechazado', fecha: new Date().toISOString() };
+            saveOverrides(overrides);
+            logHistorial(_c5.nombre, 'Rechazado', gNombre, gCargo);
+            updateStats(candidatos); applyFilters();
+            var _ni = filtered.findIndex(function(x){return x.nombre===_c5.nombre;});
+            if (_ni >= 0) openModal(_ni); else closeModal();
+          });
+        }));
+      })(c, currentIdx);
+
+    } else if (est === 'Contratado') {
+      var marcadoLocalCont = overrides[c.nombre];
+      if (marcadoLocalCont) {
+        row.appendChild(makeBtn('&#8635; Revertir estado', 'btn-secondary', function() {
+          var _nombreRC = c.nombre;
+          delete overrides[_nombreRC]; saveOverrides(overrides);
+          logHistorial(_nombreRC, 'Revertido a Disponible (desde Contratado)', 'Gerente', null);
+          updateStats(candidatos); applyFilters(); openModal(currentIdx);
+        }));
+      } else {
+        var info3 = document.createElement('span');
+        info3.style.cssText = 'font-size:12px;color:var(--text-3);';
+        info3.textContent = 'Estado registrado en la base de datos.';
+        row.appendChild(info3);
+      }
+    } else if (est === 'Rechazado') {
+      var marcadoLocalRech = overrides[c.nombre];
+      if (marcadoLocalRech) {
+        row.appendChild(makeBtn('&#8635; Revertir estado', 'btn-secondary', function() {
+          var _nombreRR = c.nombre;
+          delete overrides[_nombreRR]; saveOverrides(overrides);
+          logHistorial(_nombreRR, 'Revertido a Disponible (desde Rechazado)', 'Gerente', null);
+          updateStats(candidatos); applyFilters(); openModal(currentIdx);
+        }));
+      }
+      // Always allow reactivation, whether override or from Excel
+      row.appendChild(makeBtn('&#9200; Iniciar nuevo proceso', 'btn-proceso', function() {
+        var _c2 = c; var _idx2 = currentIdx;
+        showFormGerente(_c2.nombre, function(gNombre, gCargo) {
+          overrides[_c2.nombre] = { estado: 'En proceso', fecha: new Date().toISOString(), gerente_nombre: gNombre, gerente_cargo: gCargo };
+          saveOverrides(overrides);
+          logHistorial(_c2.nombre, 'En proceso (nuevo proceso)', gNombre, gCargo);
+          updateStats(candidatos); applyFilters(); openModal(_idx2);
+        });
+      }));
+    }
+  }
+
+    function applyFilters() {
+    const q = currentSearch.toLowerCase().trim();
+    if (!currentFilter && !q) {
+      filtered = [];
+      renderGrid(true);
+      document.getElementById('results-count').textContent = '';
+      return;
+    }
+    filtered = candidatos.filter(c => {
+      const est = estadoEfectivo(c);
+      if (currentFilter && currentFilter !== 'todos' && est !== currentFilter) return false;
+      if (currentCargo !== 'todos' && (c.cargo || '').trim() !== currentCargo) return false;
+      if (q) {
+        const hay = [c.nombre, c.cargo, c.profesion, c.ultima_empresa, c.ultimo_cargo, c.resumen, c.referido_por].join(' ').toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+    var sortVal = (document.getElementById('sort-select') || {}).value || 'fecha-desc';
+    filtered.sort(function(a, b) {
+      if (sortVal === 'alfa') return (a.nombre || '').localeCompare(b.nombre || '', 'es');
+      var da = a.fecha || '0', db = b.fecha || '0';
+      if (sortVal === 'fecha-asc') return da < db ? -1 : da > db ? 1 : 0;
+      return da > db ? -1 : da < db ? 1 : 0;
+    });
+    renderGrid();
+    document.getElementById('results-count').textContent = filtered.length + ' candidato' + (filtered.length !== 1 ? 's' : '');
+  }
+
+  function esc(s) {
+    if (!s) return '';
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function renderGrid(noFilter) {
+    const grid = document.getElementById('grid');
+    if (noFilter) {
+      grid.innerHTML = '<div class="empty"><div class="empty-icon">&#127919;</div><p>Selecciona un filtro para ver los candidatos.</p></div>';
+      return;
+    }
+    if (!filtered.length) {
+      grid.innerHTML = '<div class="empty"><div class="empty-icon">&#128269;</div><p>No hay candidatos que coincidan con los filtros.</p></div>';
+      return;
+    }
+    grid.innerHTML = filtered.map((c, i) => {
+      const est = estadoEfectivo(c), cls = estadoClass(est);
+      return '<div class="card" data-idx="' + i + '" tabindex="0">' +
+        '<div class="card-stripe ' + cls + '"></div>' +
+        '<div class="card-body">' +
+          '<div class="card-top">' +
+            '<div class="card-name">' + esc(c.nombre) + '</div>' +
+            '<span class="badge ' + cls + '">' + estadoLabel(est) + '</span>' +
+          '</div>' +
+          '<div class="card-cargo">' + esc(c.cargo || 'Sin cargo definido') + '</div>' +
+          '<div class="card-meta">' +
+            (c.experiencia ? '<span>' + esc(c.experiencia) + '</span>' : '') +
+            (c.ultima_empresa ? '<span>' + esc(c.ultima_empresa) + '</span>' : '') +
+          '</div>' +
+          (c.resumen ? '<p class="card-resumen">' + esc(c.resumen) + '</p>' : '') +
+        '</div>' +
+        '<div class="card-footer">' +
+          '<div class="ref-info">Referido por <strong>' + esc(c.referido_por || '—') + '</strong>' + (c.fecha ? '<span style="color:var(--text-4);font-size:11px;margin-left:6px;">· ' + c.fecha + '</span>' : '') + '</div>' +
+          '<button class="btn-ver">Ver perfil →</button>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+    grid.querySelectorAll('.card').forEach(card => {
+      card.addEventListener('click', () => openModal(parseInt(card.dataset.idx)));
+      card.addEventListener('keydown', e => { if (e.key === 'Enter') openModal(parseInt(card.dataset.idx)); });
+    });
+  }
+
+  function openModal(idx) {
+    currentIdx = idx;
+    const c = filtered[idx];
+    const est = estadoEfectivo(c), cls = estadoClass(est);
+    document.getElementById('m-nombre').textContent = c.nombre;
+    document.getElementById('m-cargo').textContent = c.cargo || '';
+    const badge = document.getElementById('m-estado-badge');
+    badge.textContent = estadoLabel(est); badge.className = 'badge ' + cls;
+    document.getElementById('m-resumen').textContent = c.resumen || '';
+    document.getElementById('m-resumen-section').style.display = c.resumen ? '' : 'none';
+    document.getElementById('m-exp').textContent = c.experiencia || '—';
+    document.getElementById('m-empresa').textContent = c.ultima_empresa || '—';
+    document.getElementById('m-ucargo').textContent = c.ultimo_cargo || '—';
+    document.getElementById('m-prof').textContent = c.profesion || '—';
+    document.getElementById('m-uni').textContent = c.universidad || '—';
+    document.getElementById('m-ref').textContent = c.referido_por || '—';
+    const procSec = document.getElementById('m-proceso-section');
+    if (c.entrevistado_por) { procSec.style.display = ''; document.getElementById('m-entpor').textContent = c.entrevistado_por; }
+    else { procSec.style.display = 'none'; }
+    const btnCv = document.getElementById('btn-cv');
+    if (c.cv_file) { btnCv.href = c.cv_file; btnCv.style.display = ''; } else { btnCv.style.display = 'none'; }
+    const btnLi = document.getElementById('btn-linkedin');
+    if (c.linkedin && c.linkedin !== 'None') { btnLi.href = c.linkedin; btnLi.style.display = ''; } else { btnLi.style.display = 'none'; }
+    const note = document.getElementById('proceso-note');
+    const actionsDiv = document.getElementById('modal-estado-actions');
+    note.style.display = 'none';
+    renderEstadoActions(actionsDiv, c, est, note);
+    document.getElementById('modal-overlay').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeModal() {
+    document.getElementById('modal-overlay').classList.remove('open');
+    document.body.style.overflow = '';
+    currentIdx = null;
+  }
+
+  // Estado actions rendered dynamically — no static listener needed
+
+  document.getElementById('btn-close').addEventListener('click', closeModal);
+  document.getElementById('modal-overlay').addEventListener('click', e => { if (e.target === document.getElementById('modal-overlay')) closeModal(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+  function limpiarFiltro() {
+    document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+    document.getElementById('btn-limpiar').style.display = 'none';
+    currentFilter = null;
+    applyFilters();
+  }
+  document.getElementById('btn-limpiar').addEventListener('click', limpiarFiltro);
+
+  document.querySelectorAll('.pill[data-estado]').forEach(pill => {
+    pill.addEventListener('click', function() {
+      document.querySelectorAll('.pill[data-estado]').forEach(p => p.classList.remove('active'));
+      this.classList.add('active');
+      currentFilter = this.dataset.estado;
+      document.getElementById('btn-limpiar').style.display = '';
+      applyFilters();
+    });
+  });
+
+  document.addEventListener('gerente-confirmed', function(e) {
+    if (_pendingProceso) {
+      _pendingProceso(e.detail.nombre, e.detail.cargo);
+      _pendingProceso = null;
+    }
+  });
+
+  document.querySelectorAll('.pill.cargo').forEach(pill => {
+    pill.addEventListener('click', function() {
+      document.querySelectorAll('.pill.cargo').forEach(p => p.classList.remove('active'));
+      this.classList.add('active');
+      currentCargo = this.dataset.cargo;
+      applyFilters();
+    });
+  });
+
+  document.getElementById('search').addEventListener('input', function() { currentSearch = this.value; applyFilters(); });
+  document.getElementById('sort-select').addEventListener('change', function() { applyFilters(); });
+
+  // candidatos loaded via Firebase callback above
+
+  document.getElementById('modal-nuevo-overlay').addEventListener('click', function(e) {
+    if (e.target === this) closeNuevo();
+  });
+
+  // ---- Gerente identification form ----
+  var _pendingProceso = null;
+
+  function showFormGerente(candidatoNombre, onConfirm) {
+    document.getElementById('gf-candidato-label').textContent = 'Marcando en proceso: ' + candidatoNombre;
+    document.getElementById('gf-nombre').value = localStorage.getItem('gerente_nombre') || '';
+    document.getElementById('gf-cargo').value = localStorage.getItem('gerente_cargo') || '';
+    document.getElementById('gerente-form-overlay').style.display = 'flex';
+    _pendingProceso = onConfirm;
+  }
+
+})();
+</script>
+<script>
+function cancelarFormGerente() {
+  document.getElementById('gerente-form-overlay').style.display = 'none';
+  window._pendingProceso = null;
+}
+function confirmarFormGerente() {
+  var nombre = document.getElementById('gf-nombre').value.trim();
+  var cargo = document.getElementById('gf-cargo').value.trim();
+  if (!nombre) { document.getElementById('gf-nombre').style.borderColor = '#EF4444'; return; }
+  localStorage.setItem('gerente_nombre', nombre);
+  localStorage.setItem('gerente_cargo', cargo);
+  document.getElementById('gerente-form-overlay').style.display = 'none';
+  // Find the IIFE-internal pending callback via event
+  document.dispatchEvent(new CustomEvent('gerente-confirmed', { detail: { nombre, cargo } }));
+}
+</script>
+
+
+<!-- Formulario identificación gerente -->
+<div id="gerente-form-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:400;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:16px;padding:32px;width:90%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,0.2);">
+    <h3 style="font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:700;margin-bottom:6px;">¿Quién está revisando?</h3>
+    <p style="font-size:13px;color:#6B7280;margin-bottom:20px;" id="gf-candidato-label"></p>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div>
+        <label style="font-size:11px;font-weight:600;color:#9CA3AF;text-transform:uppercase;letter-spacing:0.06em;display:block;margin-bottom:4px;">Tu nombre</label>
+        <input id="gf-nombre" type="text" placeholder="Ej: Pablo Fajardo" style="width:100%;padding:10px 12px;border:1.5px solid #E4E7EF;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none;" />
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:600;color:#9CA3AF;text-transform:uppercase;letter-spacing:0.06em;display:block;margin-bottom:4px;">Tu cargo</label>
+        <input id="gf-cargo" type="text" placeholder="Ej: Director de Tecnología" style="width:100%;padding:10px 12px;border:1.5px solid #E4E7EF;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none;" />
+      </div>
+    </div>
+    <div style="margin-top:20px;display:flex;gap:10px;justify-content:flex-end;">
+      <button onclick="cancelarFormGerente()" style="padding:10px 18px;border-radius:8px;border:1.5px solid #E4E7EF;background:#fff;font-family:'DM Sans',sans-serif;font-size:14px;cursor:pointer;color:#6B7280;">Cancelar</button>
+      <button onclick="confirmarFormGerente()" style="padding:10px 24px;border-radius:8px;border:none;background:#D97706;color:#fff;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;">&#9200; Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Referir candidato -->
+<div id="referir-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:500;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:16px;padding:32px;width:90%;max-width:460px;box-shadow:0 20px 60px rgba(0,0,0,0.2);">
+    <h3 style="font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:700;margin-bottom:4px;color:#111;">Referir un candidato</h3>
+    <p style="font-size:13px;color:#6B7280;margin-bottom:20px;">Completa los datos y se enviará un correo a Jamis con la información.</p>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div>
+        <label style="font-size:11px;font-weight:600;color:#9CA3AF;text-transform:uppercase;letter-spacing:0.06em;display:block;margin-bottom:4px;">Tu nombre *</label>
+        <input id="rf-referente" type="text" placeholder="Ej: Pablo Fajardo" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1.5px solid #E4E7EF;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none;" />
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:600;color:#9CA3AF;text-transform:uppercase;letter-spacing:0.06em;display:block;margin-bottom:4px;">Nombre del candidato *</label>
+        <input id="rf-nombre" type="text" placeholder="Nombre completo" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1.5px solid #E4E7EF;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none;" />
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:600;color:#9CA3AF;text-transform:uppercase;letter-spacing:0.06em;display:block;margin-bottom:4px;">Cargo al que aplica *</label>
+        <input id="rf-cargo" type="text" placeholder="Ej: Data Scientist" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1.5px solid #E4E7EF;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none;" />
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:600;color:#9CA3AF;text-transform:uppercase;letter-spacing:0.06em;display:block;margin-bottom:4px;">Correo del candidato</label>
+        <input id="rf-email" type="email" placeholder="candidato@email.com (opcional)" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1.5px solid #E4E7EF;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none;" />
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:600;color:#9CA3AF;text-transform:uppercase;letter-spacing:0.06em;display:block;margin-bottom:4px;">Nota adicional</label>
+        <textarea id="rf-nota" placeholder="Por qué lo recomiendas, experiencia destacada..." rows="3" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1.5px solid #E4E7EF;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none;resize:vertical;"></textarea>
+      </div>
+    </div>
+    <div style="margin-top:20px;display:flex;gap:10px;justify-content:flex-end;">
+      <button onclick="cerrarFormReferir()" style="padding:10px 18px;border-radius:8px;border:1.5px solid #E4E7EF;background:#fff;font-family:'DM Sans',sans-serif;font-size:14px;cursor:pointer;color:#6B7280;">Cancelar</button>
+      <button onclick="enviarReferido()" style="padding:10px 24px;border-radius:8px;border:none;background:#2563EB;color:#fff;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;">&#128231; Enviar referido</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function abrirFormReferir() {
+  var lastRef = localStorage.getItem('gerente_nombre') || '';
+  document.getElementById('rf-referente').value = lastRef;
+  document.getElementById('rf-nombre').value = '';
+  document.getElementById('rf-cargo').value = '';
+  document.getElementById('rf-email').value = '';
+  document.getElementById('rf-nota').value = '';
+  ['rf-referente','rf-nombre','rf-cargo'].forEach(function(id) {
+    document.getElementById(id).style.borderColor = '#E4E7EF';
+  });
+  document.getElementById('referir-overlay').style.display = 'flex';
+}
+function cerrarFormReferir() {
+  document.getElementById('referir-overlay').style.display = 'none';
+}
+function enviarReferido() {
+  var referente = document.getElementById('rf-referente').value.trim();
+  var nombre = document.getElementById('rf-nombre').value.trim();
+  var cargo = document.getElementById('rf-cargo').value.trim();
+  var email = document.getElementById('rf-email').value.trim();
+  var nota = document.getElementById('rf-nota').value.trim();
+  var valid = true;
+  ['rf-referente','rf-nombre','rf-cargo'].forEach(function(id) {
+    var v = document.getElementById(id).value.trim();
+    if (!v) { document.getElementById(id).style.borderColor = '#EF4444'; valid = false; }
+    else { document.getElementById(id).style.borderColor = '#E4E7EF'; }
+  });
+  if (!valid) return;
+  if (referente) localStorage.setItem('gerente_nombre', referente);
+  // Write to Firebase
+  var fbApp = window._fbApp;
+  if (fbApp) {
+    var db2 = firebase.database(fbApp);
+    var entry = { referente: referente, nombre: nombre, cargo: cargo, fecha: new Date().toISOString() };
+    if (email) entry.email = email;
+    if (nota) entry.nota = nota;
+    db2.ref('referidos_nuevos').push(entry).catch(function(e) { console.warn('Firebase error:', e); });
+  }
+  // Build mailto
+  var asunto = encodeURIComponent('[Nuevo Referido] ' + nombre + ' – ' + cargo);
+    var cuerpo = 'NUEVO CANDIDATO REFERIDO' +
+    '\n\nReferido por: ' + referente +
+    '\nCandidato: ' + nombre +
+    '\nCargo al que aplica: ' + cargo +
+    (email ? '\nCorreo candidato: ' + email : '') +
+    (nota ? '\n\nNota: ' + nota : '') +
+    '\n\nFecha: ' + new Date().toLocaleString('es-CO') +
+    '\n\n---\nEnviado desde el portal Referidos Leal';
+  cerrarFormReferir();
+  window.location.href = 'mailto:jamis.garzon@lla.com?subject=' + asunto + '&body=' + encodeURIComponent(cuerpo);
+}
+document.addEventListener('DOMContentLoaded', function() {
+  var ov = document.getElementById('referir-overlay');
+  if (ov) ov.addEventListener('click', function(e) {
+    if (e.target === this) cerrarFormReferir();
+  });
+});
+</script>
+</body>
+</html>

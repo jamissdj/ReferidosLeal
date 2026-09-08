@@ -1,0 +1,1228 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Referidos Leal — Banco de Talento</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F0F2F7;
+    --surface: #FFFFFF;
+    --surface2: #F7F8FC;
+    --border: #E4E7EF;
+    --text: #111827;
+    --text-2: #4B5563;
+    --text-3: #9CA3AF;
+    --accent: #2B4EE6;
+    --accent-light: #EEF2FF;
+    --disponible: #059669;
+    --disponible-bg: #ECFDF5;
+    --proceso: #D97706;
+    --proceso-bg: #FFFBEB;
+    --contratado: #7C3AED;
+    --contratado-bg: #F5F3FF;
+    --rechazado: #9CA3AF;
+    --rechazado-bg: #F9FAFB;
+    --desistio: #EA580C;
+    --desistio-bg: #FFF7ED;
+    --radius: 12px;
+    --radius-sm: 6px;
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+  header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 32px; position: sticky; top: 0; z-index: 100; }
+  .header-inner { max-width: 1280px; margin: 0 auto; display: flex; align-items: center; gap: 32px; height: 64px; }
+  .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; flex-shrink: 0; }
+  .logo-mark { width: 34px; height: 34px; background: var(--accent); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #fff; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 15px; letter-spacing: -0.5px; }
+  .logo-text { font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 15px; color: var(--text); line-height: 1.2; }
+  .logo-sub { font-size: 11px; font-weight: 400; color: var(--text-3); }
+  .header-stats { display: flex; gap: 24px; margin-left: auto; }
+  .stat { text-align: center; }
+  .stat-num { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 18px; line-height: 1; color: var(--text); }
+  .stat-label { font-size: 11px; color: var(--text-3); margin-top: 2px; white-space: nowrap; }
+  .stat-num.disp { color: var(--disponible); }
+  .stat-num.proc { color: var(--proceso); }
+  .stat-num.cont { color: var(--contratado); }
+  .toolbar { max-width: 1280px; margin: 28px auto 0; padding: 0 32px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  .search-wrap { position: relative; flex: 1; min-width: 220px; }
+  .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-3); pointer-events: none; }
+  .search-input { width: 100%; padding: 10px 12px 10px 36px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--text); outline: none; transition: border-color 0.15s; }
+  .search-input:focus { border-color: var(--accent); }
+  .search-input::placeholder { color: var(--text-3); }
+  .filter-pills { display: flex; gap: 6px; flex-wrap: wrap; }
+  .pill { padding: 8px 14px; border-radius: 20px; border: 1.5px solid var(--border); background: var(--surface); font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; color: var(--text-2); cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+  .pill:hover { border-color: var(--accent); color: var(--accent); }
+  .pill.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .pill.active.disponible { background: var(--disponible); border-color: var(--disponible); }
+  .pill.active.proceso { background: var(--proceso); border-color: var(--proceso); }
+  .pill.active.contratado { background: var(--contratado); border-color: var(--contratado); }
+  .pill.active.rechazado { background: #6B7280; border-color: #6B7280; }
+  .pill.active.desistio { background: var(--desistio); border-color: var(--desistio); }
+  .pill.cargo { font-size: 12px; padding: 5px 11px; }
+  .pill.cargo.active { background: #6366F1; border-color: #6366F1; color: #fff; }
+  .pill.cargo:hover { border-color: #6366F1; color: #6366F1; }
+  .filter-bar { max-width: 1280px; margin: 8px auto 0; padding: 0 32px; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .filter-bar-label { font-size: 11.5px; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.05em; margin-right: 4px; white-space: nowrap; }
+  .results-count { font-size: 13px; color: var(--text-3); margin-left: auto; white-space: nowrap; }
+  .grid { max-width: 1280px; margin: 20px auto 60px; padding: 0 32px; display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; }
+  .card { background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); overflow: hidden; cursor: pointer; transition: transform 0.15s, box-shadow 0.15s; display: flex; flex-direction: column; }
+  .card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
+  .card-stripe { height: 4px; width: 100%; flex-shrink: 0; }
+  .card-stripe.disponible { background: var(--disponible); }
+  .card-stripe.en-proceso { background: var(--proceso); }
+  .card-stripe.contratado { background: var(--contratado); }
+  .card-stripe.rechazado { background: var(--rechazado); }
+  .card-stripe.desistio { background: var(--desistio); }
+  .card-body { padding: 18px 20px 16px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
+  .card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+  .card-name { font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 15px; line-height: 1.3; color: var(--text); }
+  .badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 20px; font-size: 11.5px; font-weight: 600; white-space: nowrap; flex-shrink: 0; }
+  .badge::before { content: ''; display: block; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .badge.disponible { background: var(--disponible-bg); color: var(--disponible); }
+  .badge.en-proceso { background: var(--proceso-bg); color: var(--proceso); }
+  .badge.contratado { background: var(--contratado-bg); color: var(--contratado); }
+  .badge.rechazado { background: var(--rechazado-bg); color: var(--rechazado); }
+  .badge.desistio { background: var(--desistio-bg); color: var(--desistio); }
+  .card-cargo { font-size: 12.5px; font-weight: 500; color: var(--accent); background: var(--accent-light); display: inline-block; padding: 2px 8px; border-radius: 4px; align-self: flex-start; }
+  .card-meta { display: flex; gap: 16px; font-size: 12.5px; color: var(--text-2); }
+  .card-meta span { display: flex; align-items: center; gap: 4px; }
+  .card-resumen { font-size: 13px; color: var(--text-2); line-height: 1.55; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .card-footer { padding: 12px 20px 14px; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; background: var(--surface2); }
+  .ref-info { font-size: 11.5px; color: var(--text-3); }
+  .fecha-ingreso { font-size: 11px; color: var(--text-3); margin-top: 3px; }
+  .ref-info strong { color: var(--text-2); font-weight: 500; }
+  .btn-ver { font-family: 'DM Sans', sans-serif; font-size: 12.5px; font-weight: 500; color: var(--accent); background: none; border: 1.5px solid var(--accent); border-radius: 6px; padding: 5px 12px; cursor: pointer; transition: all 0.15s; }
+  .btn-ver:hover { background: var(--accent); color: #fff; }
+  .btn-delete-card { background: none; border: none; cursor: pointer; color: #9CA3AF; font-size: 15px; padding: 4px 6px; border-radius: 5px; transition: all 0.15s; line-height: 1; }
+  .btn-delete-card:hover { color: #EF4444; background: #FEF2F2; }
+  .btn-delete-modal { background: #FEF2F2; color: #EF4444; border: 1.5px solid #FCA5A5; border-radius: 8px; padding: 10px 18px; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.15s; }
+  .btn-delete-modal:hover { background: #EF4444; color: #fff; border-color: #EF4444; }
+  .btn-edit-modal { background: #EFF6FF; color: #2563EB; border: 1.5px solid #93C5FD; border-radius: 8px; padding: 10px 18px; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.15s; }
+  .btn-edit-modal:hover { background: #2563EB; color: #fff; border-color: #2563EB; }
+  .empty { grid-column: 1 / -1; text-align: center; padding: 60px 20px; color: var(--text-3); }
+  .empty-icon { font-size: 40px; margin-bottom: 12px; }
+  .empty p { font-size: 15px; }
+  .modal-overlay { position: fixed; inset: 0; background: rgba(15, 20, 40, 0.45); backdrop-filter: blur(4px); z-index: 200; display: none; align-items: center; justify-content: center; padding: 20px; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--surface); border-radius: 16px; width: 100%; max-width: 660px; max-height: 90vh; overflow-y: auto; box-shadow: 0 24px 64px rgba(0,0,0,0.18); }
+  .modal-header { position: sticky; top: 0; background: var(--surface); padding: 22px 28px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; gap: 14px; z-index: 1; }
+  .modal-header-text { flex: 1; }
+  .modal-name { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 20px; color: var(--text); margin-bottom: 6px; }
+  .modal-badges { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .btn-close { background: none; border: none; cursor: pointer; color: var(--text-3); padding: 4px; border-radius: 6px; transition: color 0.15s, background 0.15s; flex-shrink: 0; font-size: 20px; line-height: 1; }
+  .btn-close:hover { color: var(--text); background: var(--bg); }
+  .modal-body { padding: 24px 28px 28px; }
+  .section-label { font-family: 'Space Grotesk', sans-serif; font-size: 10.5px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-3); margin-bottom: 8px; }
+  .modal-section { margin-bottom: 22px; }
+  .resumen-text { font-size: 14px; line-height: 1.65; color: var(--text-2); }
+  .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .detail-item label { display: block; font-size: 11px; font-weight: 500; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 3px; }
+  .detail-item span { font-size: 14px; color: var(--text); }
+  .modal-actions { display: flex; gap: 10px; flex-wrap: wrap; padding-top: 20px; border-top: 1px solid var(--border); }
+  .btn-action { flex: 1; min-width: 130px; padding: 11px 18px; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; cursor: pointer; border: none; transition: all 0.15s; text-align: center; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 7px; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: #1d3fc4; }
+  .btn-proceso { background: var(--proceso-bg); color: var(--proceso); border: 1.5px solid var(--proceso); }
+  .btn-rechazado { background: var(--rechazado-bg); color: #6B7280; border: 1.5px solid #D1D5DB; }
+  .btn-rechazado:hover { background: #6B7280; color: #fff; border-color: #6B7280; }
+  .btn-contratado { background: var(--contratado-bg); color: var(--contratado); border: 1.5px solid var(--contratado); }
+  .btn-contratado:hover { background: var(--contratado); color: #fff; }
+  .btn-desistio { background: var(--desistio-bg); color: var(--desistio); border: 1.5px solid var(--desistio); }
+  .btn-desistio:hover { background: var(--desistio); color: #fff; }
+  .estado-section-label { font-size: 11px; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+  .btn-proceso:hover { background: var(--proceso); color: #fff; }
+  .btn-proceso.active { background: var(--proceso); color: #fff; }
+  .btn-secondary { background: var(--bg); color: var(--text-2); border: 1.5px solid var(--border); }
+  .btn-secondary:hover { border-color: var(--text-2); color: var(--text); }
+  .proceso-note { font-size: 12px; color: var(--text-3); margin-top: 8px; font-style: italic; }
+  .historial-section { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); }
+  .historial-timeline { display: flex; flex-direction: column; gap: 0; margin-top: 10px; }
+  .historial-item { display: flex; gap: 12px; position: relative; padding-bottom: 14px; }
+  .historial-item:last-child { padding-bottom: 0; }
+  .historial-dot-col { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; }
+  .historial-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); flex-shrink: 0; margin-top: 3px; }
+  .historial-dot.proceso { background: var(--proceso); }
+  .historial-dot.disponible { background: var(--disponible); }
+  .historial-dot.contratado { background: var(--contratado); }
+  .historial-dot.rechazado { background: var(--rechazado); }
+  .historial-dot.desistio { background: var(--desistio); }
+  .historial-line { width: 2px; flex: 1; background: var(--border); margin-top: 4px; }
+  .historial-item:last-child .historial-line { display: none; }
+  .historial-content { flex: 1; }
+  .historial-accion { font-size: 13px; font-weight: 600; color: var(--text); }
+  .historial-meta { font-size: 11.5px; color: var(--text-3); margin-top: 2px; }
+  .historial-empty { font-size: 13px; color: var(--text-3); font-style: italic; }
+  .modal::-webkit-scrollbar { width: 6px; }
+  .modal::-webkit-scrollbar-track { background: transparent; }
+  .modal::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  .btn-nuevo {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 9px 16px; border-radius: var(--radius-sm);
+    background: var(--accent); color: #fff;
+    font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500;
+    border: none; cursor: pointer; white-space: nowrap; transition: background 0.15s; flex-shrink: 0;
+  }
+  .btn-nuevo:hover { background: #1d3fc4; }
+
+  .modal-nuevo { max-width: 540px; }
+
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-full { grid-column: 1 / -1; }
+  .form-group { display: flex; flex-direction: column; gap: 5px; }
+  .form-group label { font-size: 11.5px; font-weight: 500; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.06em; }
+  .form-group input, .form-group select, .form-group textarea {
+    padding: 9px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+    font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--text);
+    background: var(--surface); outline: none; transition: border-color 0.15s;
+  }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--accent); }
+  .form-group textarea { resize: vertical; min-height: 80px; }
+  .form-note { font-size: 12px; color: var(--text-3); margin-top: 4px; }
+  .form-required { color: #EF4444; }
+
+    .badge-local {
+    display: inline-block; font-size: 10px; font-weight: 700;
+    color: #2B4EE6; background: #EEF2FF;
+    padding: 1px 6px; border-radius: 10px; margin-right: 4px;
+  }
+  #toast {
+    position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: #111827; color: #fff; font-size: 14px; font-weight: 500;
+    padding: 12px 22px; border-radius: 8px; opacity: 0;
+    transition: opacity 0.2s, transform 0.2s; pointer-events: none; z-index: 999;
+    white-space: nowrap;
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  @media (max-width: 680px) {
+    .header-stats { display: none; }
+    .toolbar { padding: 0 16px; }
+    .grid { padding: 0 16px; }
+    .detail-grid { grid-template-columns: 1fr; }
+    .modal { border-radius: 12px; }
+    .modal-header, .modal-body { padding: 16px 18px; }
+  }
+.btn-download {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 9px 16px; border-radius: 6px;
+  background: #fff; color: #2B4EE6;
+  font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500;
+  border: 1.5px solid #2B4EE6; cursor: pointer; white-space: nowrap; flex-shrink: 0;
+}
+.btn-download:hover { background: #EEF2FF; }
+
+  .alert-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    background: #EF4444; color: #fff; border-radius: 50%;
+    font-size: 11px; font-weight: 700; min-width: 18px; height: 18px;
+    padding: 0 4px; margin-left: 6px; line-height: 1;
+    animation: pulse-badge 1.5s ease-in-out infinite;
+  }
+  @keyframes pulse-badge { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.8;transform:scale(1.15)} }
+  .btn-referidos-alert {
+    font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600;
+    background: #FEF2F2; color: #DC2626; border: 1.5px solid #DC2626;
+    border-radius: 8px; padding: 7px 14px; cursor: pointer;
+    display: none; align-items: center; gap: 4px; white-space: nowrap;
+    transition: background 0.15s;
+  }
+  .btn-referidos-alert:hover { background: #DC2626; color: #fff; }
+  .referidos-panel {
+    position: fixed; top: 0; right: 0; bottom: 0; width: 420px; max-width: 95vw;
+    background: #fff; border-left: 1px solid var(--border);
+    box-shadow: -8px 0 32px rgba(0,0,0,0.12); z-index: 300;
+    display: flex; flex-direction: column; transform: translateX(100%);
+    transition: transform 0.3s cubic-bezier(.4,0,.2,1);
+  }
+  .referidos-panel.open { transform: translateX(0); }
+  .referidos-panel-header {
+    padding: 20px 24px 16px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--surface);
+  }
+  .referidos-panel-body { flex: 1; overflow-y: auto; padding: 16px 20px; }
+  .ref-card {
+    border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px;
+    margin-bottom: 12px; background: var(--surface2); position: relative;
+  }
+  .ref-card.nuevo { border-left: 3px solid #2563EB; background: #EFF6FF; }
+  .ref-card-name { font-size: 14px; font-weight: 600; color: var(--text); }
+  .ref-card-meta { font-size: 12px; color: var(--text-3); margin-top: 3px; }
+  .ref-card-nota { font-size: 12.5px; color: var(--text-2); margin-top: 8px; font-style: italic; }
+  .ref-card-actions { margin-top: 10px; display: flex; gap: 8px; }
+  .btn-visto { font-size: 12px; padding: 5px 12px; border-radius: 6px; border: 1.5px solid var(--border); background: #fff; cursor: pointer; color: var(--text-2); }
+  .btn-visto:hover { background: #F3F4F6; }
+
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <a class="logo" href="#">
+      <div class="logo-mark">RL</div>
+      <div class="logo-text">
+        Referidos Leal
+        <div class="logo-sub">VP AI &amp; Advanced Analytics · Admin</div>
+      </div>
+    </a>
+    <div class="header-stats">
+      <div class="stat"><div class="stat-num" id="stat-total">—</div><div class="stat-label">Total</div></div>
+      <div class="stat"><div class="stat-num disp" id="stat-disp">—</div><div class="stat-label">Disponibles</div></div>
+      <div class="stat"><div class="stat-num proc" id="stat-proc">—</div><div class="stat-label">En proceso</div></div>
+      <div class="stat"><div class="stat-num cont" id="stat-cont">—</div><div class="stat-label">Contratados</div></div>
+      <div class="stat"><div class="stat-num" style="color:var(--rechazado)" id="stat-rech">—</div><div class="stat-label">Rechazados</div></div>
+      <div class="stat"><div class="stat-num" style="color:var(--desistio)" id="stat-des">—</div><div class="stat-label">Desistieron</div></div>
+      <button class="btn-referidos-alert" id="btn-referidos-alert" onclick="toggleReferidosPanel()">
+        &#128276; Nuevos referidos <span class="alert-badge" id="referidos-badge">0</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<div class="toolbar">
+  <div class="search-wrap">
+    <svg class="search-icon" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <input class="search-input" type="text" id="search" placeholder="Buscar por nombre, cargo, habilidades…">
+  </div>
+  <div class="filter-pills">
+    <button class="pill active" data-estado="todos">Todos</button>
+    <button class="pill disponible" data-estado="Disponible">Disponibles</button>
+    <button class="pill proceso" data-estado="En proceso">En proceso</button>
+    <button class="pill contratado" data-estado="Contratado">Contratados</button>
+    <button class="pill rechazado" data-estado="Rechazado">Rechazados</button>
+    <button class="pill desistio" data-estado="Desistió">Desistieron</button>
+  </div>
+  <div class="results-count" id="results-count"></div>
+  <button class="btn-download" id="btn-publish" onclick="generarPublicable()" style="background:#F0FDF4;color:#059669;border-color:#059669;">
+    &#10003; Generar HTML publicable
+  </button>
+  <select id="sort-select" style="padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-2);background:var(--surface);cursor:pointer;outline:none;">
+    <option value="fecha-desc">Más recientes primero</option>
+    <option value="fecha-asc">Más antiguos primero</option>
+    <option value="alfa">Alfabético</option>
+  </select>
+  <button class="btn-download" id="btn-export-hist" onclick="exportarHistorial()" style="background:#EFF6FF;color:#2563EB;border-color:#2563EB;">
+    &#8659; Exportar historial CSV
+  </button>
+  <button class="btn-download" id="btn-download" onclick="downloadReporte()">
+    &#8595; Descargar reporte
+  </button>
+  <button class="btn-nuevo" id="btn-nuevo" onclick="openNuevo()">
+    + Agregar candidato
+  </button>
+</div>
+<div class="filter-bar">
+  <span class="filter-bar-label">Cargo:</span>
+  <button class="pill cargo active" data-cargo="todos">Todos</button>
+  <button class="pill cargo" data-cargo="Data Scientist">Data Scientist</button>
+  <button class="pill cargo" data-cargo="Business Analyst">Business Analyst</button>
+  <button class="pill cargo" data-cargo="Data Engineer">Data Engineer</button>
+  <button class="pill cargo" data-cargo="Manager">Manager</button>
+  <button class="pill cargo" data-cargo="Data Analyst">Data Analyst</button>
+  <button class="pill cargo" data-cargo="AI Lead">AI Lead</button>
+  <button class="pill cargo" data-cargo="Customer Care">Customer Care</button>
+  <button class="pill cargo" data-cargo="PMO">PMO</button>
+  <button class="pill cargo" data-cargo="AI Governance Lead">AI Governance Lead</button>
+</div>
+
+<div class="grid" id="grid"></div>
+
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal" id="modal">
+    <div class="modal-header">
+      <div class="modal-header-text">
+        <div class="modal-name" id="m-nombre"></div>
+        <div class="modal-badges">
+          <span class="badge" id="m-estado-badge"></span>
+          <span class="card-cargo" id="m-cargo"></span>
+        </div>
+      </div>
+      <button class="btn-close" id="btn-close">&#10005;</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-section" id="m-resumen-section">
+        <div class="section-label">Resumen</div>
+        <p class="resumen-text" id="m-resumen"></p>
+      </div>
+      <div class="modal-section">
+        <div class="section-label">Experiencia y formación</div>
+        <div class="detail-grid">
+          <div class="detail-item"><label>Experiencia</label><span id="m-exp"></span></div>
+          <div class="detail-item"><label>Última empresa</label><span id="m-empresa"></span></div>
+          <div class="detail-item"><label>Último cargo</label><span id="m-ucargo"></span></div>
+          <div class="detail-item"><label>Profesión</label><span id="m-prof"></span></div>
+          <div class="detail-item"><label>Universidad</label><span id="m-uni"></span></div>
+          <div class="detail-item"><label>Referido por</label><span id="m-ref"></span></div>
+        </div>
+      </div>
+      <div class="modal-section" id="m-proceso-section" style="display:none">
+        <div class="section-label">Estado del proceso</div>
+        <div class="detail-grid">
+          <div class="detail-item"><label>Entrevistado por</label><span id="m-entpor"></span></div>
+          <div class="detail-item" id="m-gerente-row" style="display:none"><label>Marcado en proceso por</label><span id="m-gerente-nombre"></span></div>
+          <div class="detail-item" id="m-gcargo-row" style="display:none"><label>Cargo del gerente</label><span id="m-gerente-cargo"></span></div>
+          <div class="detail-item" id="m-gfecha-row" style="display:none"><label>Fecha marcado</label><span id="m-gerente-fecha"></span></div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <a class="btn-action btn-primary" id="btn-cv" href="#" target="_blank">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          Ver hoja de vida
+        </a>
+        <a class="btn-action btn-secondary" id="btn-linkedin" href="#" target="_blank">
+          <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
+          LinkedIn
+        </a>
+        <button id="btn-edit-modal" class="btn-edit-modal" onclick="window._leal&&window._leal.openEditPanel()">&#9998; Editar</button>
+        <button id="btn-delete-modal" class="btn-delete-modal" onclick="window._leal&&window._leal.deleteCandidate(window._leal.currentIdx(),true)" style="display:none;">&#128465; Eliminar candidato</button>
+      </div>
+      <div class="modal-estado-actions" id="modal-estado-actions" style="margin-top:12px;"></div>
+      <div class="proceso-note" id="proceso-note" style="display:none"></div>
+      <div class="historial-section" id="historial-section" style="display:none">
+        <div class="section-label">Historial de interacciones</div>
+        <div class="historial-timeline" id="historial-timeline"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function openNuevo() {
+  document.getElementById('modal-nuevo-overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeNuevo() {
+  document.getElementById('modal-nuevo-overlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+function loadNuevos() {
+  try { return JSON.parse(localStorage.getItem('leal_candidatos_nuevos_v1') || '[]'); } catch(e) { return []; }
+}
+function saveNuevos(arr) {
+  try { localStorage.setItem('leal_candidatos_nuevos_v1', JSON.stringify(arr)); } catch(e) {}
+}
+function submitNuevo(e) {
+  e.preventDefault();
+  var nombre = document.getElementById('fn-nombre').value.trim();
+  var cargo = document.getElementById('fn-cargo').value.trim();
+  var referido = document.getElementById('fn-referido').value.trim();
+  var email = document.getElementById('fn-email').value.trim();
+  var telefono = document.getElementById('fn-telefono').value.trim();
+  var linkedin = document.getElementById('fn-linkedin').value.trim();
+  var profesion = document.getElementById('fn-profesion').value.trim();
+  var universidad = document.getElementById('fn-universidad').value.trim();
+  var experiencia = document.getElementById('fn-experiencia').value.trim();
+  var empresa = document.getElementById('fn-empresa').value.trim();
+  var ucargo = document.getElementById('fn-ucargo').value.trim();
+  var resumen = document.getElementById('fn-resumen').value.trim();
+  var cvfile = document.getElementById('fn-cvfile').value.trim();
+
+  // Save to localStorage
+  var nuevo = {
+    nombre: nombre, cargo: cargo, referido_por: referido,
+    fecha: new Date().toISOString().slice(0,10),
+    email: email, telefono: telefono, linkedin: linkedin,
+    profesion: profesion, universidad: universidad,
+    experiencia: experiencia, ultima_empresa: empresa,
+    ultimo_cargo: ucargo, resumen: resumen,
+    estado: 'Disponible', entrevistado_por: '', cv_file: cvfile,
+    _local: true
+  };
+  var nuevos = loadNuevos();
+  nuevos.push(nuevo);
+  saveNuevos(nuevos);
+
+  // Add to in-memory candidatos and refresh grid
+  if (window._leal) {
+    var cands = window._leal.getCandidatos();
+    cands.push(nuevo);
+    window._leal.updateStats(cands);
+    window._leal.applyFilters();
+  }
+
+  closeNuevo();
+  document.getElementById('form-nuevo').reset();
+
+  // Show confirmation
+  var toast = document.getElementById('toast');
+  toast.textContent = '✓ ' + nombre + ' guardado en el portal.';
+  toast.classList.add('show');
+  setTimeout(function() { toast.classList.remove('show'); }, 3000);
+}
+
+function generarPublicable() {
+  var todos = CANDIDATOS.concat(loadNuevos());
+  var jsonData = JSON.stringify(todos);
+  function b64d(s) { return decodeURIComponent(escape(atob(s))); }
+  var tb = b64d("PCFET0NUWVBFIGh0bWw+CjxodG1sIGxhbmc9ImVzIj4KPGhlYWQ+CjxtZXRhIGNoYXJzZXQ9IlVURi04Ij4KPG1ldGEgbmFtZT0idmlld3BvcnQiIGNvbnRlbnQ9IndpZHRoPWRldmljZS13aWR0aCwgaW5pdGlhbC1zY2FsZT0xLjAiPgo8dGl0bGU+UmVmZXJpZG9zIExlYWwg4oCUIEJhbmNvIGRlIFRhbGVudG88L3RpdGxlPgo8bGluayByZWw9InByZWNvbm5lY3QiIGhyZWY9Imh0dHBzOi8vZm9udHMuZ29vZ2xlYXBpcy5jb20iPgo8bGluayByZWw9InByZWNvbm5lY3QiIGhyZWY9Imh0dHBzOi8vZm9udHMuZ3N0YXRpYy5jb20iIGNyb3Nzb3JpZ2luPgo8bGluayBocmVmPSJodHRwczovL2ZvbnRzLmdvb2dsZWFwaXMuY29tL2NzczI/ZmFtaWx5PVNwYWNlK0dyb3Rlc2s6d2dodEA0MDA7NTAwOzYwMDs3MDAmZmFtaWx5PURNK1NhbnM6aXRhbCx3Z2h0QDAsMzAwOzAsNDAwOzAsNTAwOzEsNDAwJmRpc3BsYXk9c3dhcCIgcmVsPSJzdHlsZXNoZWV0Ij4KPHN0eWxlPgogIDpyb290IHsKICAgIC0tYmc6ICNGMEYyRjc7CiAgICAtLXN1cmZhY2U6ICNGRkZGRkY7CiAgICAtLXN1cmZhY2UyOiAjRjdGOEZDOwogICAgLS1ib3JkZXI6ICNFNEU3RUY7CiAgICAtLXRleHQ6ICMxMTE4Mjc7CiAgICAtLXRleHQtMjogIzRCNTU2MzsKICAgIC0tdGV4dC0zOiAjOUNBM0FGOwogICAgLS1hY2NlbnQ6ICMyQjRFRTY7CiAgICAtLWFjY2VudC1saWdodDogI0VFRjJGRjsKICAgIC0tZGlzcG9uaWJsZTogIzA1OTY2OTsKICAgIC0tZGlzcG9uaWJsZS1iZzogI0VDRkRGNTsKICAgIC0tcHJvY2VzbzogI0Q5NzcwNjsKICAgIC0tcHJvY2Vzby1iZzogI0ZGRkJFQjsKICAgIC0tY29udHJhdGFkbzogIzdDM0FFRDsKICAgIC0tY29udHJhdGFkby1iZzogI0Y1RjNGRjsKICAgIC0tcmVjaGF6YWRvOiAjOUNBM0FGOwogICAgLS1yZWNoYXphZG8tYmc6ICNGOUZBRkI7CiAgICAtLXJhZGl1czogMTJweDsKICAgIC0tcmFkaXVzLXNtOiA2cHg7CiAgICBjb2xvci1zY2hlbWU6IGxpZ2h0OwogIH0KICAqIHsgYm94LXNpemluZzogYm9yZGVyLWJveDsgbWFyZ2luOiAwOyBwYWRkaW5nOiAwOyB9CiAgYm9keSB7IGZvbnQtZmFtaWx5OiAnRE0gU2FucycsIHNhbnMtc2VyaWY7IGJhY2tncm91bmQ6IHZhcigtLWJnKTsgY29sb3I6IHZhcigtLXRleHQpOyBtaW4taGVpZ2h0OiAxMDB2aDsgfQogIGhlYWRlciB7IGJhY2tncm91bmQ6IHZhcigtLXN1cmZhY2UpOyBib3JkZXItYm90dG9tOiAxcHggc29saWQgdmFyKC0tYm9yZGVyKTsgcGFkZGluZzogMCAzMnB4OyBwb3NpdGlvbjogc3RpY2t5OyB0b3A6IDA7IHotaW5kZXg6IDEwMDsgfQogIC5oZWFkZXItaW5uZXIgeyBtYXgtd2lkdGg6IDEyODBweDsgbWFyZ2luOiAwIGF1dG87IGRpc3BsYXk6IGZsZXg7IGFsaWduLWl0ZW1zOiBjZW50ZXI7IGdhcDogMzJweDsgaGVpZ2h0OiA2NHB4OyB9CiAgLmxvZ28geyBkaXNwbGF5OiBmbGV4OyBhbGlnbi1pdGVtczogY2VudGVyOyBnYXA6IDEwcHg7IHRleHQtZGVjb3JhdGlvbjogbm9uZTsgZmxleC1zaHJpbms6IDA7IH0KICAubG9nby1tYXJrIHsgd2lkdGg6IDM0cHg7IGhlaWdodDogMzRweDsgYmFja2dyb3VuZDogdmFyKC0tYWNjZW50KTsgYm9yZGVyLXJhZGl1czogOHB4OyBkaXNwbGF5OiBmbGV4OyBhbGlnbi1pdGVtczogY2VudGVyOyBqdXN0aWZ5LWNvbnRlbnQ6IGNlbnRlcjsgY29sb3I6ICNmZmY7IGZvbnQtZmFtaWx5OiAnU3BhY2UgR3JvdGVzaycsIHNhbnMtc2VyaWY7IGZvbnQtd2VpZ2h0OiA3MDA7IGZvbnQtc2l6ZTogMTVweDsgbGV0dGVyLXNwYWNpbmc6IC0wLjVweDsgfQogIC5sb2dvLXRleHQgeyBmb250LWZhbWlseTogJ1NwYWNlIEdyb3Rlc2snLCBzYW5zLXNlcmlmOyBmb250LXdlaWdodDogNjAwOyBmb250LXNpemU6IDE1cHg7IGNvbG9yOiB2YXIoLS10ZXh0KTsgbGluZS1oZWlnaHQ6IDEuMjsgfQogIC5sb2dvLXN1YiB7IGZvbnQtc2l6ZTogMTFweDsgZm9udC13ZWlnaHQ6IDQwMDsgY29sb3I6IHZhcigtLXRleHQtMyk7IH0KICAuaGVhZGVyLXN0YXRzIHsgZGlzcGxheTogZmxleDsgZ2FwOiAyNHB4OyBtYXJnaW4tbGVmdDogYXV0bzsgfQogIC5zdGF0IHsgdGV4dC1hbGlnbjogY2VudGVyOyB9CiAgLnN0YXQtbnVtIHsgZm9udC1mYW1pbHk6ICdTcGFjZSBHcm90ZXNrJywgc2Fucy1zZXJpZjsgZm9udC13ZWlnaHQ6IDcwMDsgZm9udC1zaXplOiAxOHB4OyBsaW5lLWhlaWdodDogMTsgY29sb3I6IHZhcigtLXRleHQpOyB9CiAgLnN0YXQtbGFiZWwgeyBmb250LXNpemU6IDExcHg7IGNvbG9yOiB2YXIoLS10ZXh0LTMpOyBtYXJnaW4tdG9wOiAycHg7IHdoaXRlLXNwYWNlOiBub3dyYXA7IH0KICAuc3RhdC1udW0uZGlzcCB7IGNvbG9yOiB2YXIoLS1kaXNwb25pYmxlKTsgfQogIC5zdGF0LW51bS5wcm9jIHsgY29sb3I6IHZhcigtLXByb2Nlc28pOyB9CiAgLnN0YXQtbnVtLmNvbnQgeyBjb2xvcjogdmFyKC0tY29udHJhdGFkbyk7IH0KICAudG9vbGJhciB7IG1heC13aWR0aDogMTI4MHB4OyBtYXJnaW46IDI4cHggYXV0byAwOyBwYWRkaW5nOiAwIDMycHg7IGRpc3BsYXk6IGZsZXg7IGdhcDogMTJweDsgYWxpZ24taXRlbXM6IGNlbnRlcjsgZmxleC13cmFwOiB3cmFwOyB9CiAgLnNlYXJjaC13cmFwIHsgcG9zaXRpb246IHJlbGF0aXZlOyBmbGV4OiAxOyBtaW4td2lkdGg6IDIyMHB4OyB9CiAgLnNlYXJjaC1pY29uIHsgcG9zaXRpb246IGFic29sdXRlOyBsZWZ0OiAxMnB4OyB0b3A6IDUwJTsgdHJhbnNmb3JtOiB0cmFuc2xhdGVZKC01MCUpOyBjb2xvcjogdmFyKC0tdGV4dC0zKTsgcG9pbnRlci1ldmVudHM6IG5vbmU7IH0KICAuc2VhcmNoLWlucHV0IHsgd2lkdGg6IDEwMCU7IHBhZGRpbmc6IDEwcHggMTJweCAxMHB4IDM2cHg7IGJvcmRlcjogMXB4IHNvbGlkIHZhcigtLWJvcmRlcik7IGJvcmRlci1yYWRpdXM6IHZhcigtLXJhZGl1cy1zbSk7IGJhY2tncm91bmQ6IHZhcigtLXN1cmZhY2UpOyBmb250LWZhbWlseTogJ0RNIFNhbnMnLCBzYW5zLXNlcmlmOyBmb250LXNpemU6IDE0cHg7IGNvbG9yOiB2YXIoLS10ZXh0KTsgb3V0bGluZTogbm9uZTsgdHJhbnNpdGlvbjogYm9yZGVyLWNvbG9yIDAuMTVzOyB9CiAgLnNlYXJjaC1pbnB1dDpmb2N1cyB7IGJvcmRlci1jb2xvcjogdmFyKC0tYWNjZW50KTsgfQogIC5zZWFyY2gtaW5wdXQ6OnBsYWNlaG9sZGVyIHsgY29sb3I6IHZhcigtLXRleHQtMyk7IH0KICAuZmlsdGVyLWJhciB7IGRpc3BsYXk6IGZsZXg7IGFsaWduLWl0ZW1zOiBjZW50ZXI7IGdhcDogNnB4OyBmbGV4LXdyYXA6IHdyYXA7IHBhZGRpbmc6IDhweCAwIDRweDsgYm9yZGVyLXRvcDogMXB4IHNvbGlkIHZhcigtLWJvcmRlcik7IG1hcmdpbi10b3A6IDhweDsgfQogIC5maWx0ZXItYmFyLWxhYmVsIHsgZm9udC1zaXplOiAxMXB4OyBmb250LXdlaWdodDogNjAwOyBjb2xvcjogdmFyKC0tdGV4dC0zKTsgdGV4dC10cmFuc2Zvcm06IHVwcGVyY2FzZTsgbGV0dGVyLXNwYWNpbmc6IDAuMDZlbTsgbWFyZ2luLXJpZ2h0OiA0cHg7IHdoaXRlLXNwYWNlOiBub3dyYXA7IH0KICAucGlsbC5jYXJnby5hY3RpdmUgeyBiYWNrZ3JvdW5kOiB2YXIoLS1hY2NlbnQpOyBib3JkZXItY29sb3I6IHZhcigtLWFjY2VudCk7IGNvbG9yOiAjZmZmOyB9CiAgLmZpbHRlci1waWxscyB7IGRpc3BsYXk6IGZsZXg7IGdhcDogNnB4OyBmbGV4LXdyYXA6IHdyYXA7IH0KICAucGlsbCB7IHBhZGRpbmc6IDhweCAxNHB4OyBib3JkZXItcmFkaXVzOiAyMHB4OyBib3JkZXI6IDEuNXB4IHNvbGlkIHZhcigtLWJvcmRlcik7IGJhY2tncm91bmQ6IHZhcigtLXN1cmZhY2UpOyBmb250LWZhbWlseTogJ0RNIFNhbnMnLCBzYW5zLXNlcmlmOyBmb250LXNpemU6IDEzcHg7IGZvbnQtd2VpZ2h0OiA1MDA7IGNvbG9yOiB2YXIoLS10ZXh0LTIpOyBjdXJzb3I6IHBvaW50ZXI7IHRyYW5zaXRpb246IGFsbCAwLjE1czsgd2hpdGUtc3BhY2U6IG5vd3JhcDsgfQogIC5waWxsOmhvdmVyIHsgYm9yZGVyLWNvbG9yOiB2YXIoLS1hY2NlbnQpOyBjb2xvcjogdmFyKC0tYWNjZW50KTsgfQogIC5waWxsLmFjdGl2ZSB7IGJhY2tncm91bmQ6IHZhcigtLWFjY2VudCk7IGJvcmRlci1jb2xvcjogdmFyKC0tYWNjZW50KTsgY29sb3I6ICNmZmY7IH0KICAucGlsbC5hY3RpdmUuZGlzcG9uaWJsZSB7IGJhY2tncm91bmQ6IHZhcigtLWRpc3BvbmlibGUpOyBib3JkZXItY29sb3I6IHZhcigtLWRpc3BvbmlibGUpOyB9CiAgLnBpbGwuYWN0aXZlLnByb2Nlc28geyBiYWNrZ3JvdW5kOiB2YXIoLS1wcm9jZXNvKTsgYm9yZGVyLWNvbG9yOiB2YXIoLS1wcm9jZXNvKTsgfQogIC5waWxsLmFjdGl2ZS5jb250cmF0YWRvIHsgYmFja2dyb3VuZDogdmFyKC0tY29udHJhdGFkbyk7IGJvcmRlci1jb2xvcjogdmFyKC0tY29udHJhdGFkbyk7IH0KICAucGlsbC5hY3RpdmUucmVjaGF6YWRvIHsgYmFja2dyb3VuZDogIzZCNzI4MDsgYm9yZGVyLWNvbG9yOiAjNkI3MjgwOyB9CiAgLnJlc3VsdHMtY291bnQgeyBmb250LXNpemU6IDEzcHg7IGNvbG9yOiB2YXIoLS10ZXh0LTMpOyBtYXJnaW4tbGVmdDogYXV0bzsgd2hpdGUtc3BhY2U6IG5vd3JhcDsgfQogIC5ncmlkIHsgbWF4LXdpZHRoOiAxMjgwcHg7IG1hcmdpbjogMjBweCBhdXRvIDYwcHg7IHBhZGRpbmc6IDAgMzJweDsgZGlzcGxheTogZ3JpZDsgZ3JpZC10ZW1wbGF0ZS1jb2x1bW5zOiByZXBlYXQoYXV0by1maWxsLCBtaW5tYXgoMzQwcHgsIDFmcikpOyBnYXA6IDE2cHg7IH0KICAuY2FyZCB7IGJhY2tncm91bmQ6IHZhcigtLXN1cmZhY2UpOyBib3JkZXItcmFkaXVzOiB2YXIoLS1yYWRpdXMpOyBib3JkZXI6IDFweCBzb2xpZCB2YXIoLS1ib3JkZXIpOyBvdmVyZmxvdzogaGlkZGVuOyBjdXJzb3I6IHBvaW50ZXI7IHRyYW5zaXRpb246IHRyYW5zZm9ybSAwLjE1cywgYm94LXNoYWRvdyAwLjE1czsgZGlzcGxheTogZmxleDsgZmxleC1kaXJlY3Rpb246IGNvbHVtbjsgfQogIC5jYXJkOmhvdmVyIHsgdHJhbnNmb3JtOiB0cmFuc2xhdGVZKC0ycHgpOyBib3gtc2hhZG93OiAwIDhweCAyNHB4IHJnYmEoMCwwLDAsMC4wOCk7IH0KICAuY2FyZC1zdHJpcGUgeyBoZWlnaHQ6IDRweDsgd2lkdGg6IDEwMCU7IGZsZXgtc2hyaW5rOiAwOyB9CiAgLmNhcmQtc3RyaXBlLmRpc3BvbmlibGUgeyBiYWNrZ3JvdW5kOiB2YXIoLS1kaXNwb25pYmxlKTsgfQogIC5jYXJkLXN0cmlwZS5lbi1wcm9jZXNvIHsgYmFja2dyb3VuZDogdmFyKC0tcHJvY2Vzbyk7IH0KICAuY2FyZC1zdHJpcGUuY29udHJhdGFkbyB7IGJhY2tncm91bmQ6IHZhcigtLWNvbnRyYXRhZG8pOyB9CiAgLmNhcmQtc3RyaXBlLnJlY2hhemFkbyB7IGJhY2tncm91bmQ6IHZhcigtLXJlY2hhemFkbyk7IH0KICAuY2FyZC1ib2R5IHsgcGFkZGluZzogMThweCAyMHB4IDE2cHg7IGRpc3BsYXk6IGZsZXg7IGZsZXgtZGlyZWN0aW9uOiBjb2x1bW47IGdhcDogMTBweDsgZmxleDogMTsgfQogIC5jYXJkLXRvcCB7IGRpc3BsYXk6IGZsZXg7IGFsaWduLWl0ZW1zOiBmbGV4LXN0YXJ0OyBqdXN0aWZ5LWNvbnRlbnQ6IHNwYWNlLWJldHdlZW47IGdhcDogOHB4OyB9CiAgLmNhcmQtbmFtZSB7IGZvbnQtZmFtaWx5OiAnU3BhY2UgR3JvdGVzaycsIHNhbnMtc2VyaWY7IGZvbnQtd2VpZ2h0OiA2MDA7IGZvbnQtc2l6ZTogMTVweDsgbGluZS1oZWlnaHQ6IDEuMzsgY29sb3I6IHZhcigtLXRleHQpOyB9CiAgLmJhZGdlIHsgZGlzcGxheTogaW5saW5lLWZsZXg7IGFsaWduLWl0ZW1zOiBjZW50ZXI7IGdhcDogNXB4OyBwYWRkaW5nOiAzcHggOXB4OyBib3JkZXItcmFkaXVzOiAyMHB4OyBmb250LXNpemU6IDExLjVweDsgZm9udC13ZWlnaHQ6IDYwMDsgd2hpdGUtc3BhY2U6IG5vd3JhcDsgZmxleC1zaHJpbms6IDA7IH0KICAuYmFkZ2U6OmJlZm9yZSB7IGNvbnRlbnQ6ICcnOyBkaXNwbGF5OiBibG9jazsgd2lkdGg6IDZweDsgaGVpZ2h0OiA2cHg7IGJvcmRlci1yYWRpdXM6IDUwJTsgYmFja2dyb3VuZDogY3VycmVudENvbG9yOyB9CiAgLmJhZGdlLmRpc3BvbmlibGUgeyBiYWNrZ3JvdW5kOiB2YXIoLS1kaXNwb25pYmxlLWJnKTsgY29sb3I6IHZhcigtLWRpc3BvbmlibGUpOyB9CiAgLmJhZGdlLmVuLXByb2Nlc28geyBiYWNrZ3JvdW5kOiB2YXIoLS1wcm9jZXNvLWJnKTsgY29sb3I6IHZhcigtLXByb2Nlc28pOyB9CiAgLmJhZGdlLmNvbnRyYXRhZG8geyBiYWNrZ3JvdW5kOiB2YXIoLS1jb250cmF0YWRvLWJnKTsgY29sb3I6IHZhcigtLWNvbnRyYXRhZG8pOyB9CiAgLmJhZGdlLnJlY2hhemFkbyB7IGJhY2tncm91bmQ6IHZhcigtLXJlY2hhemFkby1iZyk7IGNvbG9yOiB2YXIoLS1yZWNoYXphZG8pOyB9CiAgLmNhcmQtY2FyZ28geyBmb250LXNpemU6IDEyLjVweDsgZm9udC13ZWlnaHQ6IDUwMDsgY29sb3I6IHZhcigtLWFjY2VudCk7IGJhY2tncm91bmQ6IHZhcigtLWFjY2VudC1saWdodCk7IGRpc3BsYXk6IGlubGluZS1ibG9jazsgcGFkZGluZzogMnB4IDhweDsgYm9yZGVyLXJhZGl1czogNHB4OyBhbGlnbi1zZWxmOiBmbGV4LXN0YXJ0OyB9CiAgLmNhcmQtbWV0YSB7IGRpc3BsYXk6IGZsZXg7IGdhcDogMTZweDsgZm9udC1zaXplOiAxMi41cHg7IGNvbG9yOiB2YXIoLS10ZXh0LTIpOyB9CiAgLmNhcmQtbWV0YSBzcGFuIHsgZGlzcGxheTogZmxleDsgYWxpZ24taXRlbXM6IGNlbnRlcjsgZ2FwOiA0cHg7IH0KICAuY2FyZC1yZXN1bWVuIHsgZm9udC1zaXplOiAxM3B4OyBjb2xvcjogdmFyKC0tdGV4dC0yKTsgbGluZS1oZWlnaHQ6IDEuNTU7IGRpc3BsYXk6IC13ZWJraXQtYm94OyAtd2Via2l0LWxpbmUtY2xhbXA6IDM7IC13ZWJraXQtYm94LW9yaWVudDogdmVydGljYWw7IG92ZXJmbG93OiBoaWRkZW47IH0KICAuY2FyZC1mb290ZXIgeyBwYWRkaW5nOiAxMnB4IDIwcHggMTRweDsgYm9yZGVyLXRvcDogMXB4IHNvbGlkIHZhcigtLWJvcmRlcik7IGRpc3BsYXk6IGZsZXg7IGFsaWduLWl0ZW1zOiBjZW50ZXI7IGp1c3RpZnktY29udGVudDogc3BhY2UtYmV0d2VlbjsgYmFja2dyb3VuZDogdmFyKC0tc3VyZmFjZTIpOyB9CiAgLnJlZi1pbmZvIHsgZm9udC1zaXplOiAxMS41cHg7IGNvbG9yOiB2YXIoLS10ZXh0LTMpOyB9CiAgLnJlZi1pbmZvIHN0cm9uZyB7IGNvbG9yOiB2YXIoLS10ZXh0LTIpOyBmb250LXdlaWdodDogNTAwOyB9CiAgLmJ0bi12ZXIgeyBmb250LWZhbWlseTogJ0RNIFNhbnMnLCBzYW5zLXNlcmlmOyBmb250LXNpemU6IDEyLjVweDsgZm9udC13ZWlnaHQ6IDUwMDsgY29sb3I6IHZhcigtLWFjY2VudCk7IGJhY2tncm91bmQ6IG5vbmU7IGJvcmRlcjogMS41cHggc29saWQgdmFyKC0tYWNjZW50KTsgYm9yZGVyLXJhZGl1czogNnB4OyBwYWRkaW5nOiA1cHggMTJweDsgY3Vyc29yOiBwb2ludGVyOyB0cmFuc2l0aW9uOiBhbGwgMC4xNXM7IH0KICAuYnRuLXZlcjpob3ZlciB7IGJhY2tncm91bmQ6IHZhcigtLWFjY2VudCk7IGNvbG9yOiAjZmZmOyB9CiAgLmVtcHR5IHsgZ3JpZC1jb2x1bW46IDEgLyAtMTsgdGV4dC1hbGlnbjogY2VudGVyOyBwYWRkaW5nOiA2MHB4IDIwcHg7IGNvbG9yOiB2YXIoLS10ZXh0LTMpOyB9CiAgLmVtcHR5LWljb24geyBmb250LXNpemU6IDQwcHg7IG1hcmdpbi1ib3R0b206IDEycHg7IH0KICAuZW1wdHkgcCB7IGZvbnQtc2l6ZTogMTVweDsgfQogIC5tb2RhbC1vdmVybGF5IHsgcG9zaXRpb246IGZpeGVkOyBpbnNldDogMDsgYmFja2dyb3VuZDogcmdiYSgxNSwgMjAsIDQwLCAwLjQ1KTsgYmFja2Ryb3AtZmlsdGVyOiBibHVyKDRweCk7IHotaW5kZXg6IDIwMDsgZGlzcGxheTogbm9uZTsgYWxpZ24taXRlbXM6IGNlbnRlcjsganVzdGlmeS1jb250ZW50OiBjZW50ZXI7IHBhZGRpbmc6IDIwcHg7IH0KICAubW9kYWwtb3ZlcmxheS5vcGVuIHsgZGlzcGxheTogZmxleDsgfQogIC5tb2RhbCB7IGJhY2tncm91bmQ6IHZhcigtLXN1cmZhY2UpOyBib3JkZXItcmFkaXVzOiAxNnB4OyB3aWR0aDogMTAwJTsgbWF4LXdpZHRoOiA2NjBweDsgbWF4LWhlaWdodDogOTB2aDsgb3ZlcmZsb3cteTogYXV0bzsgYm94LXNoYWRvdzogMCAyNHB4IDY0cHggcmdiYSgwLDAsMCwwLjE4KTsgfQogIC5tb2RhbC1oZWFkZXIgeyBwb3NpdGlvbjogc3RpY2t5OyB0b3A6IDA7IGJhY2tncm91bmQ6IHZhcigtLXN1cmZhY2UpOyBwYWRkaW5nOiAyMnB4IDI4cHggMThweDsgYm9yZGVyLWJvdHRvbTogMXB4IHNvbGlkIHZhcigtLWJvcmRlcik7IGRpc3BsYXk6IGZsZXg7IGFsaWduLWl0ZW1zOiBmbGV4LXN0YXJ0OyBnYXA6IDE0cHg7IHotaW5kZXg6IDE7IH0KICAubW9kYWwtaGVhZGVyLXRleHQgeyBmbGV4OiAxOyB9CiAgLm1vZGFsLW5hbWUgeyBmb250LWZhbWlseTogJ1NwYWNlIEdyb3Rlc2snLCBzYW5zLXNlcmlmOyBmb250LXdlaWdodDogNzAwOyBmb250LXNpemU6IDIwcHg7IGNvbG9yOiB2YXIoLS10ZXh0KTsgbWFyZ2luLWJvdHRvbTogNnB4OyB9CiAgLm1vZGFsLWJhZGdlcyB7IGRpc3BsYXk6IGZsZXg7IGdhcDogOHB4OyBmbGV4LXdyYXA6IHdyYXA7IGFsaWduLWl0ZW1zOiBjZW50ZXI7IH0KICAuYnRuLWNsb3NlIHsgYmFja2dyb3VuZDogbm9uZTsgYm9yZGVyOiBub25lOyBjdXJzb3I6IHBvaW50ZXI7IGNvbG9yOiB2YXIoLS10ZXh0LTMpOyBwYWRkaW5nOiA0cHg7IGJvcmRlci1yYWRpdXM6IDZweDsgdHJhbnNpdGlvbjogY29sb3IgMC4xNXMsIGJhY2tncm91bmQgMC4xNXM7IGZsZXgtc2hyaW5rOiAwOyBmb250LXNpemU6IDIwcHg7IGxpbmUtaGVpZ2h0OiAxOyB9CiAgLmJ0bi1jbG9zZTpob3ZlciB7IGNvbG9yOiB2YXIoLS10ZXh0KTsgYmFja2dyb3VuZDogdmFyKC0tYmcpOyB9CiAgLm1vZGFsLWJvZHkgeyBwYWRkaW5nOiAyNHB4IDI4cHggMjhweDsgfQogIC5zZWN0aW9uLWxhYmVsIHsgZm9udC1mYW1pbHk6ICdTcGFjZSBHcm90ZXNrJywgc2Fucy1zZXJpZjsgZm9udC1zaXplOiAxMC41cHg7IGZvbnQtd2VpZ2h0OiA2MDA7IGxldHRlci1zcGFjaW5nOiAwLjA4ZW07IHRleHQtdHJhbnNmb3JtOiB1cHBlcmNhc2U7IGNvbG9yOiB2YXIoLS10ZXh0LTMpOyBtYXJnaW4tYm90dG9tOiA4cHg7IH0KICAubW9kYWwtc2VjdGlvbiB7IG1hcmdpbi1ib3R0b206IDIycHg7IH0KICAucmVzdW1lbi10ZXh0IHsgZm9udC1zaXplOiAxNHB4OyBsaW5lLWhlaWdodDogMS42NTsgY29sb3I6IHZhcigtLXRleHQtMik7IH0KICAuZGV0YWlsLWdyaWQgeyBkaXNwbGF5OiBncmlkOyBncmlkLXRlbXBsYXRlLWNvbHVtbnM6IDFmciAxZnI7IGdhcDogMTJweDsgfQogIC5kZXRhaWwtaXRlbSBsYWJlbCB7IGRpc3BsYXk6IGJsb2NrOyBmb250LXNpemU6IDExcHg7IGZvbnQtd2VpZ2h0OiA1MDA7IGNvbG9yOiB2YXIoLS10ZXh0LTMpOyB0ZXh0LXRyYW5zZm9ybTogdXBwZXJjYXNlOyBsZXR0ZXItc3BhY2luZzogMC4wNmVtOyBtYXJnaW4tYm90dG9tOiAzcHg7IH0KICAuZGV0YWlsLWl0ZW0gc3BhbiB7IGZvbnQtc2l6ZTogMTRweDsgY29sb3I6IHZhcigtLXRleHQpOyB9CiAgLm1vZGFsLWFjdGlvbnMgeyBkaXNwbGF5OiBmbGV4OyBnYXA6IDEwcHg7IGZsZXgtd3JhcDogd3JhcDsgcGFkZGluZy10b3A6IDIwcHg7IGJvcmRlci10b3A6IDFweCBzb2xpZCB2YXIoLS1ib3JkZXIpOyB9CiAgLmJ0bi1hY3Rpb24geyBmbGV4OiAxOyBtaW4td2lkdGg6IDEzMHB4OyBwYWRkaW5nOiAxMXB4IDE4cHg7IGJvcmRlci1yYWRpdXM6IDhweDsgZm9udC1mYW1pbHk6ICdETSBTYW5zJywgc2Fucy1zZXJpZjsgZm9udC1zaXplOiAxNHB4OyBmb250LXdlaWdodDogNTAwOyBjdXJzb3I6IHBvaW50ZXI7IGJvcmRlcjogbm9uZTsgdHJhbnNpdGlvbjogYWxsIDAuMTVzOyB0ZXh0LWFsaWduOiBjZW50ZXI7IHRleHQtZGVjb3JhdGlvbjogbm9uZTsgZGlzcGxheTogaW5saW5lLWZsZXg7IGFsaWduLWl0ZW1zOiBjZW50ZXI7IGp1c3RpZnktY29udGVudDogY2VudGVyOyBnYXA6IDdweDsgfQogIC5idG4tcHJpbWFyeSB7IGJhY2tncm91bmQ6IHZhcigtLWFjY2VudCk7IGNvbG9yOiAjZmZmOyB9CiAgLmJ0bi1wcmltYXJ5OmhvdmVyIHsgYmFja2dyb3VuZDogIzFkM2ZjNDsgfQogIC5idG4tcHJvY2VzbyB7IGJhY2tncm91bmQ6IHZhcigtLXByb2Nlc28tYmcpOyBjb2xvcjogdmFyKC0tcHJvY2Vzbyk7IGJvcmRlcjogMS41cHggc29saWQgdmFyKC0tcHJvY2Vzbyk7IH0KICAuYnRuLXJlY2hhemFkbyB7IGJhY2tncm91bmQ6IHZhcigtLXJlY2hhemFkby1iZyk7IGNvbG9yOiAjNkI3MjgwOyBib3JkZXI6IDEuNXB4IHNvbGlkICNEMUQ1REI7IH0KICAuYnRuLXJlY2hhemFkbzpob3ZlciB7IGJhY2tncm91bmQ6ICM2QjcyODA7IGNvbG9yOiAjZmZmOyBib3JkZXItY29sb3I6ICM2QjcyODA7IH0KICAuYnRuLWNvbnRyYXRhZG8geyBiYWNrZ3JvdW5kOiB2YXIoLS1jb250cmF0YWRvLWJnKTsgY29sb3I6IHZhcigtLWNvbnRyYXRhZG8pOyBib3JkZXI6IDEuNXB4IHNvbGlkIHZhcigtLWNvbnRyYXRhZG8pOyB9CiAgLmJ0bi1jb250cmF0YWRvOmhvdmVyIHsgYmFja2dyb3VuZDogdmFyKC0tY29udHJhdGFkbyk7IGNvbG9yOiAjZmZmOyB9CiAgLmVzdGFkby1zZWN0aW9uLWxhYmVsIHsgZm9udC1zaXplOiAxMXB4OyBmb250LXdlaWdodDogNjAwOyBjb2xvcjogdmFyKC0tdGV4dC0zKTsgdGV4dC10cmFuc2Zvcm06IHVwcGVyY2FzZTsgbGV0dGVyLXNwYWNpbmc6IDAuMDZlbTsgbWFyZ2luLWJvdHRvbTogOHB4OyB9CiAgLmJ0bi1wcm9jZXNvOmhvdmVyIHsgYmFja2dyb3VuZDogdmFyKC0tcHJvY2Vzbyk7IGNvbG9yOiAjZmZmOyB9CiAgLmJ0bi1wcm9jZXNvLmFjdGl2ZSB7IGJhY2tncm91bmQ6IHZhcigtLXByb2Nlc28pOyBjb2xvcjogI2ZmZjsgfQogIC5idG4tc2Vjb25kYXJ5IHsgYmFja2dyb3VuZDogdmFyKC0tYmcpOyBjb2xvcjogdmFyKC0tdGV4dC0yKTsgYm9yZGVyOiAxLjVweCBzb2xpZCB2YXIoLS1ib3JkZXIpOyB9CiAgLmJ0bi1zZWNvbmRhcnk6aG92ZXIgeyBib3JkZXItY29sb3I6IHZhcigtLXRleHQtMik7IGNvbG9yOiB2YXIoLS10ZXh0KTsgfQogIC5wcm9jZXNvLW5vdGUgeyBmb250LXNpemU6IDEycHg7IGNvbG9yOiB2YXIoLS10ZXh0LTMpOyBtYXJnaW4tdG9wOiA4cHg7IGZvbnQtc3R5bGU6IGl0YWxpYzsgfQogIC5tb2RhbDo6LXdlYmtpdC1zY3JvbGxiYXIgeyB3aWR0aDogNnB4OyB9CiAgLm1vZGFsOjotd2Via2l0LXNjcm9sbGJhci10cmFjayB7IGJhY2tncm91bmQ6IHRyYW5zcGFyZW50OyB9CiAgLm1vZGFsOjotd2Via2l0LXNjcm9sbGJhci10aHVtYiB7IGJhY2tncm91bmQ6IHZhcigtLWJvcmRlcik7IGJvcmRlci1yYWRpdXM6IDNweDsgfQogIC5idG4tbnVldm8gewogICAgZGlzcGxheTogaW5saW5lLWZsZXg7IGFsaWduLWl0ZW1zOiBjZW50ZXI7IGdhcDogNnB4OwogICAgcGFkZGluZzogOXB4IDE2cHg7IGJvcmRlci1yYWRpdXM6IHZhcigtLXJhZGl1cy1zbSk7CiAgICBiYWNrZ3JvdW5kOiB2YXIoLS1hY2NlbnQpOyBjb2xvcjogI2ZmZjsKICAgIGZvbnQtZmFtaWx5OiAnRE0gU2FucycsIHNhbnMtc2VyaWY7IGZvbnQtc2l6ZTogMTNweDsgZm9udC13ZWlnaHQ6IDUwMDsKICAgIGJvcmRlcjogbm9uZTsgY3Vyc29yOiBwb2ludGVyOyB3aGl0ZS1zcGFjZTogbm93cmFwOyB0cmFuc2l0aW9uOiBiYWNrZ3JvdW5kIDAuMTVzOyBmbGV4LXNocmluazogMDsKICB9CiAgLmJ0bi1udWV2bzpob3ZlciB7IGJhY2tncm91bmQ6ICMxZDNmYzQ7IH0KCiAgLm1vZGFsLW51ZXZvIHsgbWF4LXdpZHRoOiA1NDBweDsgfQoKICAuZm9ybS1ncmlkIHsgZGlzcGxheTogZ3JpZDsgZ3JpZC10ZW1wbGF0ZS1jb2x1bW5zOiAxZnIgMWZyOyBnYXA6IDE0cHg7IH0KICAuZm9ybS1mdWxsIHsgZ3JpZC1jb2x1bW46IDEgLyAtMTsgfQogIC5mb3JtLWdyb3VwIHsgZGlzcGxheTogZmxleDsgZmxleC1kaXJlY3Rpb246IGNvbHVtbjsgZ2FwOiA1cHg7IH0KICAuZm9ybS1ncm91cCBsYWJlbCB7IGZvbnQtc2l6ZTogMTEuNXB4OyBmb250LXdlaWdodDogNTAwOyBjb2xvcjogdmFyKC0tdGV4dC0zKTsgdGV4dC10cmFuc2Zvcm06IHVwcGVyY2FzZTsgbGV0dGVyLXNwYWNpbmc6IDAuMDZlbTsgfQogIC5mb3JtLWdyb3VwIGlucHV0LCAuZm9ybS1ncm91cCBzZWxlY3QsIC5mb3JtLWdyb3VwIHRleHRhcmVhIHsKICAgIHBhZGRpbmc6IDlweCAxMnB4OyBib3JkZXI6IDFweCBzb2xpZCB2YXIoLS1ib3JkZXIpOyBib3JkZXItcmFkaXVzOiB2YXIoLS1yYWRpdXMtc20pOwogICAgZm9udC1mYW1pbHk6ICdETSBTYW5zJywgc2Fucy1zZXJpZjsgZm9udC1zaXplOiAxNHB4OyBjb2xvcjogdmFyKC0tdGV4dCk7CiAgICBiYWNrZ3JvdW5kOiB2YXIoLS1zdXJmYWNlKTsgb3V0bGluZTogbm9uZTsgdHJhbnNpdGlvbjogYm9yZGVyLWNvbG9yIDAuMTVzOwogIH0KICAuZm9ybS1ncm91cCBpbnB1dDpmb2N1cywgLmZvcm0tZ3JvdXAgc2VsZWN0OmZvY3VzLCAuZm9ybS1ncm91cCB0ZXh0YXJlYTpmb2N1cyB7IGJvcmRlci1jb2xvcjogdmFyKC0tYWNjZW50KTsgfQogIC5mb3JtLWdyb3VwIHRleHRhcmVhIHsgcmVzaXplOiB2ZXJ0aWNhbDsgbWluLWhlaWdodDogODBweDsgfQogIC5mb3JtLW5vdGUgeyBmb250LXNpemU6IDEycHg7IGNvbG9yOiB2YXIoLS10ZXh0LTMpOyBtYXJnaW4tdG9wOiA0cHg7IH0KICAuZm9ybS1yZXF1aXJlZCB7IGNvbG9yOiAjRUY0NDQ0OyB9CgogIEBtZWRpYSAobWF4LXdpZHRoOiA2ODBweCkgewogICAgLmhlYWRlci1zdGF0cyB7IGRpc3BsYXk6IG5vbmU7IH0KICAgIC50b29sYmFyIHsgcGFkZGluZzogMCAxNnB4OyB9CiAgICAuZ3JpZCB7IHBhZGRpbmc6IDAgMTZweDsgfQogICAgLmRldGFpbC1ncmlkIHsgZ3JpZC10ZW1wbGF0ZS1jb2x1bW5zOiAxZnI7IH0KICAgIC5tb2RhbCB7IGJvcmRlci1yYWRpdXM6IDEycHg7IH0KICAgIC5tb2RhbC1oZWFkZXIsIC5tb2RhbC1ib2R5IHsgcGFkZGluZzogMTZweCAxOHB4OyB9CiAgfQogIC5idG4tcmVmZXJpci1nbG9iYWwgewogICAgZm9udC1mYW1pbHk6ICdETSBTYW5zJywgc2Fucy1zZXJpZjsKICAgIGZvbnQtc2l6ZTogMTNweDsgZm9udC13ZWlnaHQ6IDYwMDsKICAgIGJhY2tncm91bmQ6ICMyNTYzRUI7IGNvbG9yOiAjZmZmOwogICAgYm9yZGVyOiBub25lOyBib3JkZXItcmFkaXVzOiA4cHg7CiAgICBwYWRkaW5nOiA5cHggMThweDsgY3Vyc29yOiBwb2ludGVyOwogICAgZGlzcGxheTogZmxleDsgYWxpZ24taXRlbXM6IGNlbnRlcjsgZ2FwOiA2cHg7CiAgICB3aGl0ZS1zcGFjZTogbm93cmFwOyB0cmFuc2l0aW9uOiBiYWNrZ3JvdW5kIDAuMTVzOwogICAgbWFyZ2luLWxlZnQ6IGF1dG87CiAgfQogIC5idG4tcmVmZXJpci1nbG9iYWw6aG92ZXIgeyBiYWNrZ3JvdW5kOiAjMUQ0RUQ4OyB9Cjwvc3R5bGU+CiAgPCEtLSBGaXJlYmFzZSAtLT4KICA8c2NyaXB0IHNyYz0iaHR0cHM6Ly93d3cuZ3N0YXRpYy5jb20vZmlyZWJhc2Vqcy85LjIzLjAvZmlyZWJhc2UtYXBwLWNvbXBhdC5qcyI+PC9zY3JpcHQ+CiAgPHNjcmlwdCBzcmM9Imh0dHBzOi8vd3d3LmdzdGF0aWMuY29tL2ZpcmViYXNlanMvOS4yMy4wL2ZpcmViYXNlLWRhdGFiYXNlLWNvbXBhdC5qcyI+PC9zY3JpcHQ+CjwvaGVhZD4KPGJvZHk+Cgo8aGVhZGVyPgogIDxkaXYgY2xhc3M9ImhlYWRlci1pbm5lciI+CiAgICA8YSBjbGFzcz0ibG9nbyIgaHJlZj0iIyI+CiAgICAgIDxkaXYgY2xhc3M9ImxvZ28tbWFyayI+Ukw8L2Rpdj4KICAgICAgPGRpdiBjbGFzcz0ibG9nby10ZXh0Ij4KICAgICAgICBSZWZlcmlkb3MgTGVhbAogICAgICAgIDxkaXYgY2xhc3M9ImxvZ28tc3ViIj5WUCBBSSAmYW1wOyBBZHZhbmNlZCBBbmFseXRpY3M8L2Rpdj4KICAgICAgPC9kaXY+CiAgICA8L2E+CiAgICA8ZGl2IGNsYXNzPSJoZWFkZXItc3RhdHMiPgogICAgICA8ZGl2IGNsYXNzPSJzdGF0Ij48ZGl2IGNsYXNzPSJzdGF0LW51bSIgaWQ9InN0YXQtdG90YWwiPuKAlDwvZGl2PjxkaXYgY2xhc3M9InN0YXQtbGFiZWwiPlRvdGFsPC9kaXY+PC9kaXY+CiAgICAgIDxkaXYgY2xhc3M9InN0YXQiPjxkaXYgY2xhc3M9InN0YXQtbnVtIGRpc3AiIGlkPSJzdGF0LWRpc3AiPuKAlDwvZGl2PjxkaXYgY2xhc3M9InN0YXQtbGFiZWwiPkRpc3BvbmlibGVzPC9kaXY+PC9kaXY+CiAgICAgIDxkaXYgY2xhc3M9InN0YXQiPjxkaXYgY2xhc3M9InN0YXQtbnVtIHByb2MiIGlkPSJzdGF0LXByb2MiPuKAlDwvZGl2PjxkaXYgY2xhc3M9InN0YXQtbGFiZWwiPkVuIHByb2Nlc288L2Rpdj48L2Rpdj4KCiAgICA8L2Rpdj4KICA8L2Rpdj4KPC9oZWFkZXI+Cgo8ZGl2IGNsYXNzPSJ0b29sYmFyIj4KICA8ZGl2IGNsYXNzPSJzZWFyY2gtd3JhcCI+CiAgICA8c3ZnIGNsYXNzPSJzZWFyY2gtaWNvbiIgd2lkdGg9IjE1IiBoZWlnaHQ9IjE1IiBmaWxsPSJub25lIiB2aWV3Qm94PSIwIDAgMjQgMjQiIHN0cm9rZT0iY3VycmVudENvbG9yIiBzdHJva2Utd2lkdGg9IjIiPjxjaXJjbGUgY3g9IjExIiBjeT0iMTEiIHI9IjgiLz48cGF0aCBkPSJtMjEgMjEtNC4zNS00LjM1Ii8+PC9zdmc+CiAgICA8aW5wdXQgY2xhc3M9InNlYXJjaC1pbnB1dCIgdHlwZT0idGV4dCIgaWQ9InNlYXJjaCIgcGxhY2Vob2xkZXI9IkJ1c2NhciBwb3Igbm9tYnJlLCBjYXJnbywgaGFiaWxpZGFkZXPigKYiPgogIDwvZGl2PgogIDxkaXYgY2xhc3M9ImZpbHRlci1waWxscyI+CiAgICA8YnV0dG9uIGNsYXNzPSJwaWxsIGRpc3BvbmlibGUgYWN0aXZlIiBkYXRhLWVzdGFkbz0iRGlzcG9uaWJsZSI+RGlzcG9uaWJsZXM8L2J1dHRvbj4KICAgIDxidXR0b24gY2xhc3M9InBpbGwgcHJvY2VzbyIgZGF0YS1lc3RhZG89IkVuIHByb2Nlc28iPkVuIHByb2Nlc288L2J1dHRvbj4KICAgIDxidXR0b24gY2xhc3M9InBpbGwgcmVjaGF6YWRvIiBkYXRhLWVzdGFkbz0iUmVjaGF6YWRvIj5SZWNoYXphZG9zPC9idXR0b24+CiAgICA8YnV0dG9uIGNsYXNzPSJwaWxsIiBpZD0iYnRuLWxpbXBpYXIiIHN0eWxlPSJkaXNwbGF5Om5vbmU7Ym9yZGVyLWNvbG9yOiM5Q0EzQUY7Y29sb3I6IzZCNzI4MDsiPiYjMTAwMDU7IExpbXBpYXI8L2J1dHRvbj4KICA8L2Rpdj4KICA8ZGl2IGNsYXNzPSJyZXN1bHRzLWNvdW50IiBpZD0icmVzdWx0cy1jb3VudCI+PC9kaXY+CiAgPHNlbGVjdCBpZD0ic29ydC1zZWxlY3QiIHN0eWxlPSJwYWRkaW5nOjdweCAxMHB4O2JvcmRlcjoxcHggc29saWQgdmFyKC0tYm9yZGVyKTtib3JkZXItcmFkaXVzOjZweDtmb250LWZhbWlseTonRE0gU2Fucycsc2Fucy1zZXJpZjtmb250LXNpemU6MTNweDtjb2xvcjp2YXIoLS10ZXh0LTIpO2JhY2tncm91bmQ6dmFyKC0tc3VyZmFjZSk7Y3Vyc29yOnBvaW50ZXI7b3V0bGluZTpub25lOyI+CiAgICA8b3B0aW9uIHZhbHVlPSJmZWNoYS1kZXNjIj5Nw6FzIHJlY2llbnRlcyBwcmltZXJvPC9vcHRpb24+CiAgICA8b3B0aW9uIHZhbHVlPSJmZWNoYS1hc2MiPk3DoXMgYW50aWd1b3MgcHJpbWVybzwvb3B0aW9uPgogICAgPG9wdGlvbiB2YWx1ZT0iYWxmYSI+QWxmYWLDqXRpY288L29wdGlvbj4KICA8L3NlbGVjdD4KICA8YnV0dG9uIGNsYXNzPSJidG4tcmVmZXJpci1nbG9iYWwiIG9uY2xpY2s9ImFicmlyRm9ybVJlZmVyaXIoKSI+JiM0MzsgUmVmZXJpciBjYW5kaWRhdG88L2J1dHRvbj4KPC9kaXY+CjxkaXYgY2xhc3M9ImZpbHRlci1iYXIiIGlkPSJjYXJnby1maWx0ZXItYmFyIj4KICA8c3BhbiBjbGFzcz0iZmlsdGVyLWJhci1sYWJlbCI+Q2FyZ286PC9zcGFuPgogIDxidXR0b24gY2xhc3M9InBpbGwgY2FyZ28gYWN0aXZlIiBkYXRhLWNhcmdvPSJ0b2RvcyI+VG9kb3M8L2J1dHRvbj4KICA8YnV0dG9uIGNsYXNzPSJwaWxsIGNhcmdvIiBkYXRhLWNhcmdvPSJEYXRhIFNjaWVudGlzdCI+RGF0YSBTY2llbnRpc3Q8L2J1dHRvbj4KICA8YnV0dG9uIGNsYXNzPSJwaWxsIGNhcmdvIiBkYXRhLWNhcmdvPSJCdXNpbmVzcyBBbmFseXN0Ij5CdXNpbmVzcyBBbmFseXN0PC9idXR0b24+CiAgPGJ1dHRvbiBjbGFzcz0icGlsbCBjYXJnbyIgZGF0YS1jYXJnbz0iRGF0YSBFbmdpbmVlciI+RGF0YSBFbmdpbmVlcjwvYnV0dG9uPgogIDxidXR0b24gY2xhc3M9InBpbGwgY2FyZ28iIGRhdGEtY2FyZ289Ik1hbmFnZXIiPk1hbmFnZXI8L2J1dHRvbj4KICA8YnV0dG9uIGNsYXNzPSJwaWxsIGNhcmdvIiBkYXRhLWNhcmdvPSJEYXRhIEFuYWx5c3QiPkRhdGEgQW5hbHlzdDwvYnV0dG9uPgogIDxidXR0b24gY2xhc3M9InBpbGwgY2FyZ28iIGRhdGEtY2FyZ289IkFJIExlYWQiPkFJIExlYWQ8L2J1dHRvbj4KICA8YnV0dG9uIGNsYXNzPSJwaWxsIGNhcmdvIiBkYXRhLWNhcmdvPSJDdXN0b21lciBDYXJlIj5DdXN0b21lciBDYXJlPC9idXR0b24+CiAgPGJ1dHRvbiBjbGFzcz0icGlsbCBjYXJnbyIgZGF0YS1jYXJnbz0iUE1PIj5QTU88L2J1dHRvbj4KICA8YnV0dG9uIGNsYXNzPSJwaWxsIGNhcmdvIiBkYXRhLWNhcmdvPSJBSSBHb3Zlcm5hbmNlIExlYWQiPkFJIEdvdmVybmFuY2UgTGVhZDwvYnV0dG9uPgo8L2Rpdj4KCjxkaXYgY2xhc3M9ImdyaWQiIGlkPSJncmlkIj48L2Rpdj4KCjxkaXYgY2xhc3M9Im1vZGFsLW92ZXJsYXkiIGlkPSJtb2RhbC1vdmVybGF5Ij4KICA8ZGl2IGNsYXNzPSJtb2RhbCIgaWQ9Im1vZGFsIj4KICAgIDxkaXYgY2xhc3M9Im1vZGFsLWhlYWRlciI+CiAgICAgIDxkaXYgY2xhc3M9Im1vZGFsLWhlYWRlci10ZXh0Ij4KICAgICAgICA8ZGl2IGNsYXNzPSJtb2RhbC1uYW1lIiBpZD0ibS1ub21icmUiPjwvZGl2PgogICAgICAgIDxkaXYgY2xhc3M9Im1vZGFsLWJhZGdlcyI+CiAgICAgICAgICA8c3BhbiBjbGFzcz0iYmFkZ2UiIGlkPSJtLWVzdGFkby1iYWRnZSI+PC9zcGFuPgogICAgICAgICAgPHNwYW4gY2xhc3M9ImNhcmQtY2FyZ28iIGlkPSJtLWNhcmdvIj48L3NwYW4+CiAgICAgICAgPC9kaXY+CiAgICAgIDwvZGl2PgogICAgICA8YnV0dG9uIGNsYXNzPSJidG4tY2xvc2UiIGlkPSJidG4tY2xvc2UiPiYjMTAwMDU7PC9idXR0b24+CiAgICA8L2Rpdj4KICAgIDxkaXYgY2xhc3M9Im1vZGFsLWJvZHkiPgogICAgICA8ZGl2IGNsYXNzPSJtb2RhbC1zZWN0aW9uIiBpZD0ibS1yZXN1bWVuLXNlY3Rpb24iPgogICAgICAgIDxkaXYgY2xhc3M9InNlY3Rpb24tbGFiZWwiPlJlc3VtZW48L2Rpdj4KICAgICAgICA8cCBjbGFzcz0icmVzdW1lbi10ZXh0IiBpZD0ibS1yZXN1bWVuIj48L3A+CiAgICAgIDwvZGl2PgogICAgICA8ZGl2IGNsYXNzPSJtb2RhbC1zZWN0aW9uIj4KICAgICAgICA8ZGl2IGNsYXNzPSJzZWN0aW9uLWxhYmVsIj5FeHBlcmllbmNpYSB5IGZvcm1hY2nDs248L2Rpdj4KICAgICAgICA8ZGl2IGNsYXNzPSJkZXRhaWwtZ3JpZCI+CiAgICAgICAgICA8ZGl2IGNsYXNzPSJkZXRhaWwtaXRlbSI+PGxhYmVsPkV4cGVyaWVuY2lhPC9sYWJlbD48c3BhbiBpZD0ibS1leHAiPjwvc3Bhbj48L2Rpdj4KICAgICAgICAgIDxkaXYgY2xhc3M9ImRldGFpbC1pdGVtIj48bGFiZWw+w5psdGltYSBlbXByZXNhPC9sYWJlbD48c3BhbiBpZD0ibS1lbXByZXNhIj48L3NwYW4+PC9kaXY+CiAgICAgICAgICA8ZGl2IGNsYXNzPSJkZXRhaWwtaXRlbSI+PGxhYmVsPsOabHRpbW8gY2FyZ288L2xhYmVsPjxzcGFuIGlkPSJtLXVjYXJnbyI+PC9zcGFuPjwvZGl2PgogICAgICAgICAgPGRpdiBjbGFzcz0iZGV0YWlsLWl0ZW0iPjxsYWJlbD5Qcm9mZXNpw7NuPC9sYWJlbD48c3BhbiBpZD0ibS1wcm9mIj48L3NwYW4+PC9kaXY+CiAgICAgICAgICA8ZGl2IGNsYXNzPSJkZXRhaWwtaXRlbSI+PGxhYmVsPlVuaXZlcnNpZGFkPC9sYWJlbD48c3BhbiBpZD0ibS11bmkiPjwvc3Bhbj48L2Rpdj4KICAgICAgICAgIDxkaXYgY2xhc3M9ImRldGFpbC1pdGVtIj48bGFiZWw+UmVmZXJpZG8gcG9yPC9sYWJlbD48c3BhbiBpZD0ibS1yZWYiPjwvc3Bhbj48L2Rpdj4KICAgICAgICA8L2Rpdj4KICAgICAgPC9kaXY+CiAgICAgIDxkaXYgY2xhc3M9Im1vZGFsLXNlY3Rpb24iIGlkPSJtLXByb2Nlc28tc2VjdGlvbiIgc3R5bGU9ImRpc3BsYXk6bm9uZSI+CiAgICAgICAgPGRpdiBjbGFzcz0ic2VjdGlvbi1sYWJlbCI+RXN0YWRvIGRlbCBwcm9jZXNvPC9kaXY+CiAgICAgICAgPGRpdiBjbGFzcz0iZGV0YWlsLWdyaWQiPgogICAgICAgICAgPGRpdiBjbGFzcz0iZGV0YWlsLWl0ZW0iPjxsYWJlbD5FbnRyZXZpc3RhZG8gcG9yPC9sYWJlbD48c3BhbiBpZD0ibS1lbnRwb3IiPjwvc3Bhbj48L2Rpdj4KICAgICAgICA8L2Rpdj4KICAgICAgPC9kaXY+CiAgICAgIDxkaXYgY2xhc3M9Im1vZGFsLWFjdGlvbnMiPgogICAgICAgIDxhIGNsYXNzPSJidG4tYWN0aW9uIGJ0bi1wcmltYXJ5IiBpZD0iYnRuLWN2IiBocmVmPSIjIiB0YXJnZXQ9Il9ibGFuayI+CiAgICAgICAgICA8c3ZnIHdpZHRoPSIxNCIgaGVpZ2h0PSIxNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJjdXJyZW50Q29sb3IiIHN0cm9rZS13aWR0aD0iMiIgdmlld0JveD0iMCAwIDI0IDI0Ij48cGF0aCBkPSJNMTQgMkg2YTIgMiAwIDAgMC0yIDJ2MTZhMiAyIDAgMCAwIDIgMmgxMmEyIDIgMCAwIDAgMi0yVjh6Ii8+PHBvbHlsaW5lIHBvaW50cz0iMTQgMiAxNCA4IDIwIDgiLz48L3N2Zz4KICAgICAgICAgIFZlciBob2phIGRlIHZpZGEKICAgICAgICA8L2E+CiAgICAgICAgPGEgY2xhc3M9ImJ0bi1hY3Rpb24gYnRuLXNlY29uZGFyeSIgaWQ9ImJ0bi1saW5rZWRpbiIgaHJlZj0iIyIgdGFyZ2V0PSJfYmxhbmsiPgogICAgICAgICAgPHN2ZyB3aWR0aD0iMTQiIGhlaWdodD0iMTQiIGZpbGw9ImN1cnJlbnRDb2xvciIgdmlld0JveD0iMCAwIDI0IDI0Ij48cGF0aCBkPSJNMTYgOGE2IDYgMCAwIDEgNiA2djdoLTR2LTdhMiAyIDAgMCAwLTItMiAyIDIgMCAwIDAtMiAydjdoLTR2LTdhNiA2IDAgMCAxIDYtNnoiLz48cmVjdCB4PSIyIiB5PSI5IiB3aWR0aD0iNCIgaGVpZ2h0PSIxMiIvPjxjaXJjbGUgY3g9IjQiIGN5PSI0IiByPSIyIi8+PC9zdmc+CiAgICAgICAgICBMaW5rZWRJbgogICAgICAgIDwvYT4KICAgICAgPC9kaXY+CiAgICAgIDxkaXYgY2xhc3M9Im1vZGFsLWVzdGFkby1hY3Rpb25zIiBpZD0ibW9kYWwtZXN0YWRvLWFjdGlvbnMiIHN0eWxlPSJtYXJnaW4tdG9wOjEycHg7Ij48L2Rpdj4KICAgICAgPGRpdiBjbGFzcz0icHJvY2Vzby1ub3RlIiBpZD0icHJvY2Vzby1ub3RlIiBzdHlsZT0iZGlzcGxheTpub25lIj48L2Rpdj4KICAgIDwvZGl2PgogIDwvZGl2Pgo8L2Rpdj4KCgo8c2NyaXB0Pgo=");
+  var ta = b64d("Cjwvc2NyaXB0Pgo8c2NyaXB0PgooZnVuY3Rpb24oKSB7CiAgLy8gRmlyZWJhc2UgY29uZmlnCiAgY29uc3QgZmlyZWJhc2VDb25maWcgPSB7CiAgICBhcGlLZXk6ICJBSXphU3lCd1pYUHY4Y1pMOUgwRDJ3d2pnWWI3akJFaTl5b045aFEiLAogICAgYXV0aERvbWFpbjogInJlZmVyaWRvcy1sZWFsLmZpcmViYXNlYXBwLmNvbSIsCiAgICBkYXRhYmFzZVVSTDogImh0dHBzOi8vcmVmZXJpZG9zLWxlYWwtZGVmYXVsdC1ydGRiLmZpcmViYXNlaW8uY29tIiwKICAgIHByb2plY3RJZDogInJlZmVyaWRvcy1sZWFsIiwKICAgIHN0b3JhZ2VCdWNrZXQ6ICJyZWZlcmlkb3MtbGVhbC5maXJlYmFzZXN0b3JhZ2UuYXBwIiwKICAgIG1lc3NhZ2luZ1NlbmRlcklkOiAiNDM1NDE3OTk2MTYxIiwKICAgIGFwcElkOiAiMTo0MzU0MTc5OTYxNjE6d2ViOmI0MDE2YjQ1NjJmNjAwNTE2ZjI2ODAiCiAgfTsKICBpZiAoIXdpbmRvdy5fZmJBcHApIHsKICAgIHdpbmRvdy5fZmJBcHAgPSBmaXJlYmFzZS5pbml0aWFsaXplQXBwKGZpcmViYXNlQ29uZmlnKTsKICB9CiAgY29uc3QgZGIgPSBmaXJlYmFzZS5kYXRhYmFzZSh3aW5kb3cuX2ZiQXBwKTsKICBjb25zdCBGQl9SRUYgPSAnZXN0YWRvcyc7CiAgY29uc3QgRkJfSElTVCA9ICdoaXN0b3JpYWwnOwoKICBmdW5jdGlvbiBsb2FkT3ZlcnJpZGVzKCkgeyByZXR1cm4ge307IH0KICBmdW5jdGlvbiBzYXZlT3ZlcnJpZGVzKG9iaikgewogICAgZGIucmVmKEZCX1JFRikuc2V0KG9iaikuY2F0Y2goZnVuY3Rpb24oZSkgeyBjb25zb2xlLndhcm4oJ0ZpcmViYXNlIHdyaXRlIGVycm9yOicsIGUpOyB9KTsKICB9CiAgZnVuY3Rpb24gbG9nSGlzdG9yaWFsKGNhbmRpZGF0b05vbWJyZSwgYWNjaW9uLCBhY3RvciwgYWN0b3JDYXJnbykgewogICAgdmFyIGVudHJ5ID0geyBhY2Npb246IGFjY2lvbiwgYWN0b3I6IGFjdG9yIHx8ICdHZXJlbnRlJywgZmVjaGE6IG5ldyBEYXRlKCkudG9JU09TdHJpbmcoKSB9OwogICAgaWYgKGFjdG9yQ2FyZ28pIGVudHJ5LmNhcmdvID0gYWN0b3JDYXJnbzsKICAgIGRiLnJlZihGQl9ISVNUICsgJy8nICsgY2FuZGlkYXRvTm9tYnJlKS5wdXNoKGVudHJ5KS5jYXRjaChmdW5jdGlvbihlKSB7IGNvbnNvbGUud2FybignSGlzdG9yaWFsIHdyaXRlIGVycm9yOicsIGUpOyB9KTsKICB9CgogIGxldCBjYW5kaWRhdG9zID0gW10sIGZpbHRlcmVkID0gW10sIG92ZXJyaWRlcyA9IHt9LCBjdXJyZW50RmlsdGVyID0gJ0Rpc3BvbmlibGUnLCBjdXJyZW50Q2FyZ28gPSAndG9kb3MnLCBjdXJyZW50U2VhcmNoID0gJycsIGN1cnJlbnRJZHggPSBudWxsOwoKICAvLyBMb2FkIG92ZXJyaWRlcyBmcm9tIEZpcmViYXNlIG9uIHN0YXJ0LCB0aGVuIHJlbmRlcgogIGRiLnJlZihGQl9SRUYpLm9uY2UoJ3ZhbHVlJykudGhlbihmdW5jdGlvbihzbmFwKSB7CiAgICBvdmVycmlkZXMgPSBzbmFwLnZhbCgpIHx8IHt9OwogICAgY2FuZGlkYXRvcyA9IENBTkRJREFUT1MuZmlsdGVyKGZ1bmN0aW9uKGMpIHsgdmFyIGUgPSBlc3RhZG9FZmVjdGl2byhjKTsgcmV0dXJuIGUgIT09ICdDb250cmF0YWRvJyAmJiBlICE9PSAnRGVzaXN0acOzJzsgfSk7CiAgICB1cGRhdGVTdGF0cyhjYW5kaWRhdG9zKTsKICAgIGFwcGx5RmlsdGVycygpOwogIH0pOwoKICAvLyBMaXN0ZW4gZm9yIHJlYWwtdGltZSBjaGFuZ2VzIGZyb20gb3RoZXIgdXNlcnMKICBkYi5yZWYoRkJfUkVGKS5vbigndmFsdWUnLCBmdW5jdGlvbihzbmFwKSB7CiAgICBvdmVycmlkZXMgPSBzbmFwLnZhbCgpIHx8IHt9OwogICAgdXBkYXRlU3RhdHMoY2FuZGlkYXRvcyk7CiAgICBhcHBseUZpbHRlcnMoKTsKICB9KTsKCiAgZnVuY3Rpb24gZXN0YWRvRWZlY3Rpdm8oYykgeyByZXR1cm4gb3ZlcnJpZGVzW2Mubm9tYnJlXSA/IChvdmVycmlkZXNbYy5ub21icmVdLmVzdGFkbyB8fCAnRW4gcHJvY2VzbycpIDogKGMuZXN0YWRvIHx8ICdEaXNwb25pYmxlJyk7IH0KICBmdW5jdGlvbiBlc3RhZG9DbGFzcyhlKSB7CiAgICBjb25zdCBtID0geyAnRGlzcG9uaWJsZSc6ICdkaXNwb25pYmxlJywgJ0VuIHByb2Nlc28nOiAnZW4tcHJvY2VzbycsICdDb250cmF0YWRvJzogJ2NvbnRyYXRhZG8nLCAnUmVjaGF6YWRvJzogJ3JlY2hhemFkbycgfTsKICAgIHJldHVybiBtW2VdIHx8ICdkaXNwb25pYmxlJzsKICB9CiAgZnVuY3Rpb24gZXN0YWRvTGFiZWwoZSkgeyBpZiAoIWUgfHwgZSA9PT0gJ05vbmUnKSByZXR1cm4gJ0Rpc3BvbmlibGUnOyByZXR1cm4gZTsgfQoKICBmdW5jdGlvbiB1cGRhdGVTdGF0cyhkYXRhKSB7CiAgICB2YXIgZGlzcCA9IGRhdGEuZmlsdGVyKGMgPT4gZXN0YWRvRWZlY3Rpdm8oYykgPT09ICdEaXNwb25pYmxlJykubGVuZ3RoOwogICAgdmFyIHByb2MgPSBkYXRhLmZpbHRlcihjID0+IGVzdGFkb0VmZWN0aXZvKGMpID09PSAnRW4gcHJvY2VzbycpLmxlbmd0aDsKICAgIGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCdzdGF0LXRvdGFsJykudGV4dENvbnRlbnQgPSBkaXNwICsgcHJvYzsKICAgIGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCdzdGF0LWRpc3AnKS50ZXh0Q29udGVudCA9IGRpc3A7CiAgICBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgnc3RhdC1wcm9jJykudGV4dENvbnRlbnQgPSBwcm9jOwogIH0KCiAgZnVuY3Rpb24gbm90aWZ5QWRtaW4obm9tYnJlLCBudWV2b0VzdGFkbykgewogICAgdmFyIGFzdW50byA9IGVuY29kZVVSSUNvbXBvbmVudCgnUmVmZXJpZG9zIExlYWwg4oCTIEFjdHVhbGl6YWNpw7NuIGVzdGFkbzogJyArIG5vbWJyZSk7CiAgICB2YXIgY3VlcnBvID0gJ0hvbGEgSmFtaXMsXG5cblRlIGluZm9ybW8gcXVlIGVsIGNhbmRpZGF0byAnICsgbm9tYnJlICsgJyBoYSBzaWRvIG1hcmNhZG8gY29tbzogJyArIG51ZXZvRXN0YWRvICsgJy5cblxuUG9yIGZhdm9yIGFjdHVhbGl6YSBlbCBlc3RhZG8gZW4gbGEgYmFzZSBkZSBkYXRvcy5cblxuU2FsdWRvcyc7CiAgICB3aW5kb3cubG9jYXRpb24uaHJlZiA9ICdtYWlsdG86amFtaXMuZ2Fyem9uQGxsYS5jb20/c3ViamVjdD0nICsgYXN1bnRvICsgJyZib2R5PScgKyBlbmNvZGVVUklDb21wb25lbnQoY3VlcnBvKTsKICB9CgogIGZ1bmN0aW9uIHJlbmRlckVzdGFkb0FjdGlvbnMoY29udGFpbmVyLCBjLCBlc3QsIG5vdGUpIHsKICAgIGNvbnRhaW5lci5pbm5lckhUTUwgPSAnJzsKICAgIHZhciBsYWJlbCA9IGRvY3VtZW50LmNyZWF0ZUVsZW1lbnQoJ2RpdicpOwogICAgbGFiZWwuY2xhc3NOYW1lID0gJ2VzdGFkby1zZWN0aW9uLWxhYmVsJzsKICAgIGxhYmVsLnRleHRDb250ZW50ID0gJ0FjdHVhbGl6YXIgZXN0YWRvJzsKICAgIGNvbnRhaW5lci5hcHBlbmRDaGlsZChsYWJlbCk7CiAgICB2YXIgcm93ID0gZG9jdW1lbnQuY3JlYXRlRWxlbWVudCgnZGl2Jyk7CiAgICByb3cuc3R5bGUuY3NzVGV4dCA9ICdkaXNwbGF5OmZsZXg7Z2FwOjhweDtmbGV4LXdyYXA6d3JhcDsnOwogICAgY29udGFpbmVyLmFwcGVuZENoaWxkKHJvdyk7CgogICAgZnVuY3Rpb24gbWFrZUJ0bih0ZXh0LCBjbHMsIG9uQ2xpY2spIHsKICAgICAgdmFyIGIgPSBkb2N1bWVudC5jcmVhdGVFbGVtZW50KCdidXR0b24nKTsKICAgICAgYi5jbGFzc05hbWUgPSAnYnRuLWFjdGlvbiAnICsgY2xzOwogICAgICBiLnN0eWxlLmZsZXggPSAnMSc7CiAgICAgIGIuaW5uZXJIVE1MID0gdGV4dDsKICAgICAgYi5hZGRFdmVudExpc3RlbmVyKCdjbGljaycsIG9uQ2xpY2spOwogICAgICByZXR1cm4gYjsKICAgIH0KCiAgICBpZiAoZXN0ID09PSAnRGlzcG9uaWJsZScpIHsKICAgICAgcm93LmFwcGVuZENoaWxkKG1ha2VCdG4oJyYjOTIwMDsgTWFyY2FyIGVuIHByb2Nlc28nLCAnYnRuLXByb2Nlc28nLCBmdW5jdGlvbigpIHsKICAgICAgICB2YXIgX2MgPSBjOyB2YXIgX2lkeCA9IGN1cnJlbnRJZHg7CiAgICAgICAgc2hvd0Zvcm1HZXJlbnRlKF9jLm5vbWJyZSwgZnVuY3Rpb24oZ05vbWJyZSwgZ0NhcmdvKSB7CiAgICAgICAgICBvdmVycmlkZXNbX2Mubm9tYnJlXSA9IHsgZXN0YWRvOiAnRW4gcHJvY2VzbycsIGZlY2hhOiBuZXcgRGF0ZSgpLnRvSVNPU3RyaW5nKCksIGdlcmVudGVfbm9tYnJlOiBnTm9tYnJlLCBnZXJlbnRlX2NhcmdvOiBnQ2FyZ28gfTsKICAgICAgICAgIHNhdmVPdmVycmlkZXMob3ZlcnJpZGVzKTsKICAgICAgICAgIGxvZ0hpc3RvcmlhbChfYy5ub21icmUsICdFbiBwcm9jZXNvJywgZ05vbWJyZSwgZ0NhcmdvKTsKICAgICAgICAgIHVwZGF0ZVN0YXRzKGNhbmRpZGF0b3MpOyBhcHBseUZpbHRlcnMoKTsgb3Blbk1vZGFsKF9pZHgpOwogICAgICAgIH0pOwogICAgICB9KSk7CgogICAgfSBlbHNlIGlmIChlc3QgPT09ICdFbiBwcm9jZXNvJykgewogICAgICB2YXIgbWFyY2Fkb0xvY2FsID0gb3ZlcnJpZGVzW2Mubm9tYnJlXTsKICAgICAgaWYgKG1hcmNhZG9Mb2NhbCkgewogICAgICAgIC8vIEFsbG93IHVuZG8KICAgICAgICAoZnVuY3Rpb24oX2MzLCBfaWR4MykgewogICAgICAgICAgcm93LmFwcGVuZENoaWxkKG1ha2VCdG4oJyYjODYzNTsgRGVzbWFyY2FyIHByb2Nlc28nLCAnYnRuLXNlY29uZGFyeScsIGZ1bmN0aW9uKCkgewogICAgICAgICAgICBzaG93Rm9ybUdlcmVudGUoX2MzLm5vbWJyZSwgZnVuY3Rpb24oZ05vbWJyZSwgZ0NhcmdvKSB7CiAgICAgICAgICAgICAgZGVsZXRlIG92ZXJyaWRlc1tfYzMubm9tYnJlXTsgc2F2ZU92ZXJyaWRlcyhvdmVycmlkZXMpOwogICAgICAgICAgICAgIGxvZ0hpc3RvcmlhbChfYzMubm9tYnJlLCAnRGVzbWFyY2FkbyAodnVlbHZlIGEgRGlzcG9uaWJsZSknLCBnTm9tYnJlLCBnQ2FyZ28pOwogICAgICAgICAgICAgIHVwZGF0ZVN0YXRzKGNhbmRpZGF0b3MpOyBhcHBseUZpbHRlcnMoKTsKICAgICAgICAgICAgICB2YXIgX25pID0gZmlsdGVyZWQuZmluZEluZGV4KGZ1bmN0aW9uKHgpe3JldHVybiB4Lm5vbWJyZT09PV9jMy5ub21icmU7fSk7CiAgICAgICAgICAgICAgaWYgKF9uaSA+PSAwKSBvcGVuTW9kYWwoX25pKTsgZWxzZSBjbG9zZU1vZGFsKCk7CiAgICAgICAgICAgIH0pOwogICAgICAgICAgfSkpOwogICAgICAgIH0pKGMsIGN1cnJlbnRJZHgpOwogICAgICB9IGVsc2UgewogICAgICAgIHZhciBpbmZvID0gZG9jdW1lbnQuY3JlYXRlRWxlbWVudCgnc3BhbicpOwogICAgICAgIGluZm8uc3R5bGUuY3NzVGV4dCA9ICdmb250LXNpemU6MTJweDtjb2xvcjp2YXIoLS10ZXh0LTMpO2FsaWduLXNlbGY6Y2VudGVyOyc7CiAgICAgICAgaW5mby50ZXh0Q29udGVudCA9ICdFc3RhZG8gcmVnaXN0cmFkbyBlbiBsYSBiYXNlIGRlIGRhdG9zLic7CiAgICAgICAgcm93LmFwcGVuZENoaWxkKGluZm8pOwogICAgICB9CiAgICAgIChmdW5jdGlvbihfYzQsIF9pZHg0KSB7CiAgICAgICAgcm93LmFwcGVuZENoaWxkKG1ha2VCdG4oJyYjMTAwMDM7IENvbnRyYXRhZG8nLCAnYnRuLWNvbnRyYXRhZG8nLCBmdW5jdGlvbigpIHsKICAgICAgICAgIHNob3dGb3JtR2VyZW50ZShfYzQubm9tYnJlLCBmdW5jdGlvbihnTm9tYnJlLCBnQ2FyZ28pIHsKICAgICAgICAgICAgb3ZlcnJpZGVzW19jNC5ub21icmVdID0geyBlc3RhZG86ICdDb250cmF0YWRvJywgZmVjaGE6IG5ldyBEYXRlKCkudG9JU09TdHJpbmcoKSB9OwogICAgICAgICAgICBzYXZlT3ZlcnJpZGVzKG92ZXJyaWRlcyk7CiAgICAgICAgICAgIGxvZ0hpc3RvcmlhbChfYzQubm9tYnJlLCAnQ29udHJhdGFkbycsIGdOb21icmUsIGdDYXJnbyk7CiAgICAgICAgICAgIHVwZGF0ZVN0YXRzKGNhbmRpZGF0b3MpOyBhcHBseUZpbHRlcnMoKTsKICAgICAgICAgICAgdmFyIF9uaSA9IGZpbHRlcmVkLmZpbmRJbmRleChmdW5jdGlvbih4KXtyZXR1cm4geC5ub21icmU9PT1fYzQubm9tYnJlO30pOwogICAgICAgICAgICBpZiAoX25pID49IDApIG9wZW5Nb2RhbChfbmkpOyBlbHNlIGNsb3NlTW9kYWwoKTsKICAgICAgICAgIH0pOwogICAgICAgIH0pKTsKICAgICAgfSkoYywgY3VycmVudElkeCk7CiAgICAgIChmdW5jdGlvbihfYzUsIF9pZHg1KSB7CiAgICAgICAgcm93LmFwcGVuZENoaWxkKG1ha2VCdG4oJyYjMTAwMDU7IFJlY2hhemFkbycsICdidG4tcmVjaGF6YWRvJywgZnVuY3Rpb24oKSB7CiAgICAgICAgICBzaG93Rm9ybUdlcmVudGUoX2M1Lm5vbWJyZSwgZnVuY3Rpb24oZ05vbWJyZSwgZ0NhcmdvKSB7CiAgICAgICAgICAgIG92ZXJyaWRlc1tfYzUubm9tYnJlXSA9IHsgZXN0YWRvOiAnUmVjaGF6YWRvJywgZmVjaGE6IG5ldyBEYXRlKCkudG9JU09TdHJpbmcoKSB9OwogICAgICAgICAgICBzYXZlT3ZlcnJpZGVzKG92ZXJyaWRlcyk7CiAgICAgICAgICAgIGxvZ0hpc3RvcmlhbChfYzUubm9tYnJlLCAnUmVjaGF6YWRvJywgZ05vbWJyZSwgZ0NhcmdvKTsKICAgICAgICAgICAgdXBkYXRlU3RhdHMoY2FuZGlkYXRvcyk7IGFwcGx5RmlsdGVycygpOwogICAgICAgICAgICB2YXIgX25pID0gZmlsdGVyZWQuZmluZEluZGV4KGZ1bmN0aW9uKHgpe3JldHVybiB4Lm5vbWJyZT09PV9jNS5ub21icmU7fSk7CiAgICAgICAgICAgIGlmIChfbmkgPj0gMCkgb3Blbk1vZGFsKF9uaSk7IGVsc2UgY2xvc2VNb2RhbCgpOwogICAgICAgICAgfSk7CiAgICAgICAgfSkpOwogICAgICB9KShjLCBjdXJyZW50SWR4KTsKCiAgICB9IGVsc2UgaWYgKGVzdCA9PT0gJ0NvbnRyYXRhZG8nKSB7CiAgICAgIHZhciBtYXJjYWRvTG9jYWxDb250ID0gb3ZlcnJpZGVzW2Mubm9tYnJlXTsKICAgICAgaWYgKG1hcmNhZG9Mb2NhbENvbnQpIHsKICAgICAgICByb3cuYXBwZW5kQ2hpbGQobWFrZUJ0bignJiM4NjM1OyBSZXZlcnRpciBlc3RhZG8nLCAnYnRuLXNlY29uZGFyeScsIGZ1bmN0aW9uKCkgewogICAgICAgICAgdmFyIF9ub21icmVSQyA9IGMubm9tYnJlOwogICAgICAgICAgZGVsZXRlIG92ZXJyaWRlc1tfbm9tYnJlUkNdOyBzYXZlT3ZlcnJpZGVzKG92ZXJyaWRlcyk7CiAgICAgICAgICBsb2dIaXN0b3JpYWwoX25vbWJyZVJDLCAnUmV2ZXJ0aWRvIGEgRGlzcG9uaWJsZSAoZGVzZGUgQ29udHJhdGFkbyknLCAnR2VyZW50ZScsIG51bGwpOwogICAgICAgICAgdXBkYXRlU3RhdHMoY2FuZGlkYXRvcyk7IGFwcGx5RmlsdGVycygpOyBvcGVuTW9kYWwoY3VycmVudElkeCk7CiAgICAgICAgfSkpOwogICAgICB9IGVsc2UgewogICAgICAgIHZhciBpbmZvMyA9IGRvY3VtZW50LmNyZWF0ZUVsZW1lbnQoJ3NwYW4nKTsKICAgICAgICBpbmZvMy5zdHlsZS5jc3NUZXh0ID0gJ2ZvbnQtc2l6ZToxMnB4O2NvbG9yOnZhcigtLXRleHQtMyk7JzsKICAgICAgICBpbmZvMy50ZXh0Q29udGVudCA9ICdFc3RhZG8gcmVnaXN0cmFkbyBlbiBsYSBiYXNlIGRlIGRhdG9zLic7CiAgICAgICAgcm93LmFwcGVuZENoaWxkKGluZm8zKTsKICAgICAgfQogICAgfSBlbHNlIGlmIChlc3QgPT09ICdSZWNoYXphZG8nKSB7CiAgICAgIHZhciBtYXJjYWRvTG9jYWxSZWNoID0gb3ZlcnJpZGVzW2Mubm9tYnJlXTsKICAgICAgaWYgKG1hcmNhZG9Mb2NhbFJlY2gpIHsKICAgICAgICByb3cuYXBwZW5kQ2hpbGQobWFrZUJ0bignJiM4NjM1OyBSZXZlcnRpciBlc3RhZG8nLCAnYnRuLXNlY29uZGFyeScsIGZ1bmN0aW9uKCkgewogICAgICAgICAgdmFyIF9ub21icmVSUiA9IGMubm9tYnJlOwogICAgICAgICAgZGVsZXRlIG92ZXJyaWRlc1tfbm9tYnJlUlJdOyBzYXZlT3ZlcnJpZGVzKG92ZXJyaWRlcyk7CiAgICAgICAgICBsb2dIaXN0b3JpYWwoX25vbWJyZVJSLCAnUmV2ZXJ0aWRvIGEgRGlzcG9uaWJsZSAoZGVzZGUgUmVjaGF6YWRvKScsICdHZXJlbnRlJywgbnVsbCk7CiAgICAgICAgICB1cGRhdGVTdGF0cyhjYW5kaWRhdG9zKTsgYXBwbHlGaWx0ZXJzKCk7IG9wZW5Nb2RhbChjdXJyZW50SWR4KTsKICAgICAgICB9KSk7CiAgICAgIH0KICAgICAgLy8gQWx3YXlzIGFsbG93IHJlYWN0aXZhdGlvbiwgd2hldGhlciBvdmVycmlkZSBvciBmcm9tIEV4Y2VsCiAgICAgIHJvdy5hcHBlbmRDaGlsZChtYWtlQnRuKCcmIzkyMDA7IEluaWNpYXIgbnVldm8gcHJvY2VzbycsICdidG4tcHJvY2VzbycsIGZ1bmN0aW9uKCkgewogICAgICAgIHZhciBfYzIgPSBjOyB2YXIgX2lkeDIgPSBjdXJyZW50SWR4OwogICAgICAgIHNob3dGb3JtR2VyZW50ZShfYzIubm9tYnJlLCBmdW5jdGlvbihnTm9tYnJlLCBnQ2FyZ28pIHsKICAgICAgICAgIG92ZXJyaWRlc1tfYzIubm9tYnJlXSA9IHsgZXN0YWRvOiAnRW4gcHJvY2VzbycsIGZlY2hhOiBuZXcgRGF0ZSgpLnRvSVNPU3RyaW5nKCksIGdlcmVudGVfbm9tYnJlOiBnTm9tYnJlLCBnZXJlbnRlX2NhcmdvOiBnQ2FyZ28gfTsKICAgICAgICAgIHNhdmVPdmVycmlkZXMob3ZlcnJpZGVzKTsKICAgICAgICAgIGxvZ0hpc3RvcmlhbChfYzIubm9tYnJlLCAnRW4gcHJvY2VzbyAobnVldm8gcHJvY2VzbyknLCBnTm9tYnJlLCBnQ2FyZ28pOwogICAgICAgICAgdXBkYXRlU3RhdHMoY2FuZGlkYXRvcyk7IGFwcGx5RmlsdGVycygpOyBvcGVuTW9kYWwoX2lkeDIpOwogICAgICAgIH0pOwogICAgICB9KSk7CiAgICB9CiAgfQoKICAgIGZ1bmN0aW9uIGFwcGx5RmlsdGVycygpIHsKICAgIGNvbnN0IHEgPSBjdXJyZW50U2VhcmNoLnRvTG93ZXJDYXNlKCkudHJpbSgpOwogICAgaWYgKCFjdXJyZW50RmlsdGVyICYmICFxKSB7CiAgICAgIGZpbHRlcmVkID0gW107CiAgICAgIHJlbmRlckdyaWQodHJ1ZSk7CiAgICAgIGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCdyZXN1bHRzLWNvdW50JykudGV4dENvbnRlbnQgPSAnJzsKICAgICAgcmV0dXJuOwogICAgfQogICAgZmlsdGVyZWQgPSBjYW5kaWRhdG9zLmZpbHRlcihjID0+IHsKICAgICAgY29uc3QgZXN0ID0gZXN0YWRvRWZlY3Rpdm8oYyk7CiAgICAgIGlmIChjdXJyZW50RmlsdGVyICYmIGN1cnJlbnRGaWx0ZXIgIT09ICd0b2RvcycgJiYgZXN0ICE9PSBjdXJyZW50RmlsdGVyKSByZXR1cm4gZmFsc2U7CiAgICAgIGlmIChjdXJyZW50Q2FyZ28gIT09ICd0b2RvcycgJiYgKGMuY2FyZ28gfHwgJycpLnRyaW0oKSAhPT0gY3VycmVudENhcmdvKSByZXR1cm4gZmFsc2U7CiAgICAgIGlmIChxKSB7CiAgICAgICAgY29uc3QgaGF5ID0gW2Mubm9tYnJlLCBjLmNhcmdvLCBjLnByb2Zlc2lvbiwgYy51bHRpbWFfZW1wcmVzYSwgYy51bHRpbW9fY2FyZ28sIGMucmVzdW1lbiwgYy5yZWZlcmlkb19wb3JdLmpvaW4oJyAnKS50b0xvd2VyQ2FzZSgpOwogICAgICAgIGlmICghaGF5LmluY2x1ZGVzKHEpKSByZXR1cm4gZmFsc2U7CiAgICAgIH0KICAgICAgcmV0dXJuIHRydWU7CiAgICB9KTsKICAgIHZhciBzb3J0VmFsID0gKGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCdzb3J0LXNlbGVjdCcpIHx8IHt9KS52YWx1ZSB8fCAnZmVjaGEtZGVzYyc7CiAgICBmaWx0ZXJlZC5zb3J0KGZ1bmN0aW9uKGEsIGIpIHsKICAgICAgaWYgKHNvcnRWYWwgPT09ICdhbGZhJykgcmV0dXJuIChhLm5vbWJyZSB8fCAnJykubG9jYWxlQ29tcGFyZShiLm5vbWJyZSB8fCAnJywgJ2VzJyk7CiAgICAgIHZhciBkYSA9IGEuZmVjaGEgfHwgJzAnLCBkYiA9IGIuZmVjaGEgfHwgJzAnOwogICAgICBpZiAoc29ydFZhbCA9PT0gJ2ZlY2hhLWFzYycpIHJldHVybiBkYSA8IGRiID8gLTEgOiBkYSA+IGRiID8gMSA6IDA7CiAgICAgIHJldHVybiBkYSA+IGRiID8gLTEgOiBkYSA8IGRiID8gMSA6IDA7CiAgICB9KTsKICAgIHJlbmRlckdyaWQoKTsKICAgIGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCdyZXN1bHRzLWNvdW50JykudGV4dENvbnRlbnQgPSBmaWx0ZXJlZC5sZW5ndGggKyAnIGNhbmRpZGF0bycgKyAoZmlsdGVyZWQubGVuZ3RoICE9PSAxID8gJ3MnIDogJycpOwogIH0KCiAgZnVuY3Rpb24gZXNjKHMpIHsKICAgIGlmICghcykgcmV0dXJuICcnOwogICAgcmV0dXJuIFN0cmluZyhzKS5yZXBsYWNlKC8mL2csJyZhbXA7JykucmVwbGFjZSgvPC9nLCcmbHQ7JykucmVwbGFjZSgvPi9nLCcmZ3Q7JykucmVwbGFjZSgvIi9nLCcmcXVvdDsnKTsKICB9CgogIGZ1bmN0aW9uIHJlbmRlckdyaWQobm9GaWx0ZXIpIHsKICAgIGNvbnN0IGdyaWQgPSBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgnZ3JpZCcpOwogICAgaWYgKG5vRmlsdGVyKSB7CiAgICAgIGdyaWQuaW5uZXJIVE1MID0gJzxkaXYgY2xhc3M9ImVtcHR5Ij48ZGl2IGNsYXNzPSJlbXB0eS1pY29uIj4mIzEyNzkxOTs8L2Rpdj48cD5TZWxlY2Npb25hIHVuIGZpbHRybyBwYXJhIHZlciBsb3MgY2FuZGlkYXRvcy48L3A+PC9kaXY+JzsKICAgICAgcmV0dXJuOwogICAgfQogICAgaWYgKCFmaWx0ZXJlZC5sZW5ndGgpIHsKICAgICAgZ3JpZC5pbm5lckhUTUwgPSAnPGRpdiBjbGFzcz0iZW1wdHkiPjxkaXYgY2xhc3M9ImVtcHR5LWljb24iPiYjMTI4MjY5OzwvZGl2PjxwPk5vIGhheSBjYW5kaWRhdG9zIHF1ZSBjb2luY2lkYW4gY29uIGxvcyBmaWx0cm9zLjwvcD48L2Rpdj4nOwogICAgICByZXR1cm47CiAgICB9CiAgICBncmlkLmlubmVySFRNTCA9IGZpbHRlcmVkLm1hcCgoYywgaSkgPT4gewogICAgICBjb25zdCBlc3QgPSBlc3RhZG9FZmVjdGl2byhjKSwgY2xzID0gZXN0YWRvQ2xhc3MoZXN0KTsKICAgICAgcmV0dXJuICc8ZGl2IGNsYXNzPSJjYXJkIiBkYXRhLWlkeD0iJyArIGkgKyAnIiB0YWJpbmRleD0iMCI+JyArCiAgICAgICAgJzxkaXYgY2xhc3M9ImNhcmQtc3RyaXBlICcgKyBjbHMgKyAnIj48L2Rpdj4nICsKICAgICAgICAnPGRpdiBjbGFzcz0iY2FyZC1ib2R5Ij4nICsKICAgICAgICAgICc8ZGl2IGNsYXNzPSJjYXJkLXRvcCI+JyArCiAgICAgICAgICAgICc8ZGl2IGNsYXNzPSJjYXJkLW5hbWUiPicgKyBlc2MoYy5ub21icmUpICsgJzwvZGl2PicgKwogICAgICAgICAgICAnPHNwYW4gY2xhc3M9ImJhZGdlICcgKyBjbHMgKyAnIj4nICsgZXN0YWRvTGFiZWwoZXN0KSArICc8L3NwYW4+JyArCiAgICAgICAgICAnPC9kaXY+JyArCiAgICAgICAgICAnPGRpdiBjbGFzcz0iY2FyZC1jYXJnbyI+JyArIGVzYyhjLmNhcmdvIHx8ICdTaW4gY2FyZ28gZGVmaW5pZG8nKSArICc8L2Rpdj4nICsKICAgICAgICAgICc8ZGl2IGNsYXNzPSJjYXJkLW1ldGEiPicgKwogICAgICAgICAgICAoYy5leHBlcmllbmNpYSA/ICc8c3Bhbj4nICsgZXNjKGMuZXhwZXJpZW5jaWEpICsgJzwvc3Bhbj4nIDogJycpICsKICAgICAgICAgICAgKGMudWx0aW1hX2VtcHJlc2EgPyAnPHNwYW4+JyArIGVzYyhjLnVsdGltYV9lbXByZXNhKSArICc8L3NwYW4+JyA6ICcnKSArCiAgICAgICAgICAnPC9kaXY+JyArCiAgICAgICAgICAoYy5yZXN1bWVuID8gJzxwIGNsYXNzPSJjYXJkLXJlc3VtZW4iPicgKyBlc2MoYy5yZXN1bWVuKSArICc8L3A+JyA6ICcnKSArCiAgICAgICAgJzwvZGl2PicgKwogICAgICAgICc8ZGl2IGNsYXNzPSJjYXJkLWZvb3RlciI+JyArCiAgICAgICAgICAnPGRpdiBjbGFzcz0icmVmLWluZm8iPlJlZmVyaWRvIHBvciA8c3Ryb25nPicgKyBlc2MoYy5yZWZlcmlkb19wb3IgfHwgJ+KAlCcpICsgJzwvc3Ryb25nPicgKyAoYy5mZWNoYSA/ICc8c3BhbiBzdHlsZT0iY29sb3I6dmFyKC0tdGV4dC00KTtmb250LXNpemU6MTFweDttYXJnaW4tbGVmdDo2cHg7Ij7CtyAnICsgYy5mZWNoYSArICc8L3NwYW4+JyA6ICcnKSArICc8L2Rpdj4nICsKICAgICAgICAgICc8YnV0dG9uIGNsYXNzPSJidG4tdmVyIj5WZXIgcGVyZmlsIOKGkjwvYnV0dG9uPicgKwogICAgICAgICc8L2Rpdj4nICsKICAgICAgJzwvZGl2Pic7CiAgICB9KS5qb2luKCcnKTsKICAgIGdyaWQucXVlcnlTZWxlY3RvckFsbCgnLmNhcmQnKS5mb3JFYWNoKGNhcmQgPT4gewogICAgICBjYXJkLmFkZEV2ZW50TGlzdGVuZXIoJ2NsaWNrJywgKCkgPT4gb3Blbk1vZGFsKHBhcnNlSW50KGNhcmQuZGF0YXNldC5pZHgpKSk7CiAgICAgIGNhcmQuYWRkRXZlbnRMaXN0ZW5lcigna2V5ZG93bicsIGUgPT4geyBpZiAoZS5rZXkgPT09ICdFbnRlcicpIG9wZW5Nb2RhbChwYXJzZUludChjYXJkLmRhdGFzZXQuaWR4KSk7IH0pOwogICAgfSk7CiAgfQoKICBmdW5jdGlvbiBvcGVuTW9kYWwoaWR4KSB7CiAgICBjdXJyZW50SWR4ID0gaWR4OwogICAgY29uc3QgYyA9IGZpbHRlcmVkW2lkeF07CiAgICBjb25zdCBlc3QgPSBlc3RhZG9FZmVjdGl2byhjKSwgY2xzID0gZXN0YWRvQ2xhc3MoZXN0KTsKICAgIGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCdtLW5vbWJyZScpLnRleHRDb250ZW50ID0gYy5ub21icmU7CiAgICBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgnbS1jYXJnbycpLnRleHRDb250ZW50ID0gYy5jYXJnbyB8fCAnJzsKICAgIGNvbnN0IGJhZGdlID0gZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ20tZXN0YWRvLWJhZGdlJyk7CiAgICBiYWRnZS50ZXh0Q29udGVudCA9IGVzdGFkb0xhYmVsKGVzdCk7IGJhZGdlLmNsYXNzTmFtZSA9ICdiYWRnZSAnICsgY2xzOwogICAgZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ20tcmVzdW1lbicpLnRleHRDb250ZW50ID0gYy5yZXN1bWVuIHx8ICcnOwogICAgZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ20tcmVzdW1lbi1zZWN0aW9uJykuc3R5bGUuZGlzcGxheSA9IGMucmVzdW1lbiA/ICcnIDogJ25vbmUnOwogICAgZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ20tZXhwJykudGV4dENvbnRlbnQgPSBjLmV4cGVyaWVuY2lhIHx8ICfigJQnOwogICAgZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ20tZW1wcmVzYScpLnRleHRDb250ZW50ID0gYy51bHRpbWFfZW1wcmVzYSB8fCAn4oCUJzsKICAgIGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCdtLXVjYXJnbycpLnRleHRDb250ZW50ID0gYy51bHRpbW9fY2FyZ28gfHwgJ+KAlCc7CiAgICBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgnbS1wcm9mJykudGV4dENvbnRlbnQgPSBjLnByb2Zlc2lvbiB8fCAn4oCUJzsKICAgIGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCdtLXVuaScpLnRleHRDb250ZW50ID0gYy51bml2ZXJzaWRhZCB8fCAn4oCUJzsKICAgIGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCdtLXJlZicpLnRleHRDb250ZW50ID0gYy5yZWZlcmlkb19wb3IgfHwgJ+KAlCc7CiAgICBjb25zdCBwcm9jU2VjID0gZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ20tcHJvY2Vzby1zZWN0aW9uJyk7CiAgICBpZiAoYy5lbnRyZXZpc3RhZG9fcG9yKSB7IHByb2NTZWMuc3R5bGUuZGlzcGxheSA9ICcnOyBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgnbS1lbnRwb3InKS50ZXh0Q29udGVudCA9IGMuZW50cmV2aXN0YWRvX3BvcjsgfQogICAgZWxzZSB7IHByb2NTZWMuc3R5bGUuZGlzcGxheSA9ICdub25lJzsgfQogICAgY29uc3QgYnRuQ3YgPSBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgnYnRuLWN2Jyk7CiAgICBpZiAoYy5jdl9maWxlKSB7IGJ0bkN2LmhyZWYgPSBjLmN2X2ZpbGU7IGJ0bkN2LnN0eWxlLmRpc3BsYXkgPSAnJzsgfSBlbHNlIHsgYnRuQ3Yuc3R5bGUuZGlzcGxheSA9ICdub25lJzsgfQogICAgY29uc3QgYnRuTGkgPSBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgnYnRuLWxpbmtlZGluJyk7CiAgICBpZiAoYy5saW5rZWRpbiAmJiBjLmxpbmtlZGluICE9PSAnTm9uZScpIHsgYnRuTGkuaHJlZiA9IGMubGlua2VkaW47IGJ0bkxpLnN0eWxlLmRpc3BsYXkgPSAnJzsgfSBlbHNlIHsgYnRuTGkuc3R5bGUuZGlzcGxheSA9ICdub25lJzsgfQogICAgY29uc3Qgbm90ZSA9IGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCdwcm9jZXNvLW5vdGUnKTsKICAgIGNvbnN0IGFjdGlvbnNEaXYgPSBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgnbW9kYWwtZXN0YWRvLWFjdGlvbnMnKTsKICAgIG5vdGUuc3R5bGUuZGlzcGxheSA9ICdub25lJzsKICAgIHJlbmRlckVzdGFkb0FjdGlvbnMoYWN0aW9uc0RpdiwgYywgZXN0LCBub3RlKTsKICAgIGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCdtb2RhbC1vdmVybGF5JykuY2xhc3NMaXN0LmFkZCgnb3BlbicpOwogICAgZG9jdW1lbnQuYm9keS5zdHlsZS5vdmVyZmxvdyA9ICdoaWRkZW4nOwogIH0KCiAgZnVuY3Rpb24gY2xvc2VNb2RhbCgpIHsKICAgIGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCdtb2RhbC1vdmVybGF5JykuY2xhc3NMaXN0LnJlbW92ZSgnb3BlbicpOwogICAgZG9jdW1lbnQuYm9keS5zdHlsZS5vdmVyZmxvdyA9ICcnOwogICAgY3VycmVudElkeCA9IG51bGw7CiAgfQoKICAvLyBFc3RhZG8gYWN0aW9ucyByZW5kZXJlZCBkeW5hbWljYWxseSDigJQgbm8gc3RhdGljIGxpc3RlbmVyIG5lZWRlZAoKICBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgnYnRuLWNsb3NlJykuYWRkRXZlbnRMaXN0ZW5lcignY2xpY2snLCBjbG9zZU1vZGFsKTsKICBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgnbW9kYWwtb3ZlcmxheScpLmFkZEV2ZW50TGlzdGVuZXIoJ2NsaWNrJywgZSA9PiB7IGlmIChlLnRhcmdldCA9PT0gZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ21vZGFsLW92ZXJsYXknKSkgY2xvc2VNb2RhbCgpOyB9KTsKICBkb2N1bWVudC5hZGRFdmVudExpc3RlbmVyKCdrZXlkb3duJywgZSA9PiB7IGlmIChlLmtleSA9PT0gJ0VzY2FwZScpIGNsb3NlTW9kYWwoKTsgfSk7CgogIGZ1bmN0aW9uIGxpbXBpYXJGaWx0cm8oKSB7CiAgICBkb2N1bWVudC5xdWVyeVNlbGVjdG9yQWxsKCcucGlsbCcpLmZvckVhY2gocCA9PiBwLmNsYXNzTGlzdC5yZW1vdmUoJ2FjdGl2ZScpKTsKICAgIGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCdidG4tbGltcGlhcicpLnN0eWxlLmRpc3BsYXkgPSAnbm9uZSc7CiAgICBjdXJyZW50RmlsdGVyID0gbnVsbDsKICAgIGFwcGx5RmlsdGVycygpOwogIH0KICBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgnYnRuLWxpbXBpYXInKS5hZGRFdmVudExpc3RlbmVyKCdjbGljaycsIGxpbXBpYXJGaWx0cm8pOwoKICBkb2N1bWVudC5xdWVyeVNlbGVjdG9yQWxsKCcucGlsbFtkYXRhLWVzdGFkb10nKS5mb3JFYWNoKHBpbGwgPT4gewogICAgcGlsbC5hZGRFdmVudExpc3RlbmVyKCdjbGljaycsIGZ1bmN0aW9uKCkgewogICAgICBkb2N1bWVudC5xdWVyeVNlbGVjdG9yQWxsKCcucGlsbFtkYXRhLWVzdGFkb10nKS5mb3JFYWNoKHAgPT4gcC5jbGFzc0xpc3QucmVtb3ZlKCdhY3RpdmUnKSk7CiAgICAgIHRoaXMuY2xhc3NMaXN0LmFkZCgnYWN0aXZlJyk7CiAgICAgIGN1cnJlbnRGaWx0ZXIgPSB0aGlzLmRhdGFzZXQuZXN0YWRvOwogICAgICBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgnYnRuLWxpbXBpYXInKS5zdHlsZS5kaXNwbGF5ID0gJyc7CiAgICAgIGFwcGx5RmlsdGVycygpOwogICAgfSk7CiAgfSk7CgogIGRvY3VtZW50LmFkZEV2ZW50TGlzdGVuZXIoJ2dlcmVudGUtY29uZmlybWVkJywgZnVuY3Rpb24oZSkgewogICAgaWYgKF9wZW5kaW5nUHJvY2VzbykgewogICAgICBfcGVuZGluZ1Byb2Nlc28oZS5kZXRhaWwubm9tYnJlLCBlLmRldGFpbC5jYXJnbyk7CiAgICAgIF9wZW5kaW5nUHJvY2VzbyA9IG51bGw7CiAgICB9CiAgfSk7CgogIGRvY3VtZW50LnF1ZXJ5U2VsZWN0b3JBbGwoJy5waWxsLmNhcmdvJykuZm9yRWFjaChwaWxsID0+IHsKICAgIHBpbGwuYWRkRXZlbnRMaXN0ZW5lcignY2xpY2snLCBmdW5jdGlvbigpIHsKICAgICAgZG9jdW1lbnQucXVlcnlTZWxlY3RvckFsbCgnLnBpbGwuY2FyZ28nKS5mb3JFYWNoKHAgPT4gcC5jbGFzc0xpc3QucmVtb3ZlKCdhY3RpdmUnKSk7CiAgICAgIHRoaXMuY2xhc3NMaXN0LmFkZCgnYWN0aXZlJyk7CiAgICAgIGN1cnJlbnRDYXJnbyA9IHRoaXMuZGF0YXNldC5jYXJnbzsKICAgICAgYXBwbHlGaWx0ZXJzKCk7CiAgICB9KTsKICB9KTsKCiAgZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ3NlYXJjaCcpLmFkZEV2ZW50TGlzdGVuZXIoJ2lucHV0JywgZnVuY3Rpb24oKSB7IGN1cnJlbnRTZWFyY2ggPSB0aGlzLnZhbHVlOyBhcHBseUZpbHRlcnMoKTsgfSk7CiAgZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ3NvcnQtc2VsZWN0JykuYWRkRXZlbnRMaXN0ZW5lcignY2hhbmdlJywgZnVuY3Rpb24oKSB7IGFwcGx5RmlsdGVycygpOyB9KTsKCiAgLy8gY2FuZGlkYXRvcyBsb2FkZWQgdmlhIEZpcmViYXNlIGNhbGxiYWNrIGFib3ZlCgogIGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCdtb2RhbC1udWV2by1vdmVybGF5JykuYWRkRXZlbnRMaXN0ZW5lcignY2xpY2snLCBmdW5jdGlvbihlKSB7CiAgICBpZiAoZS50YXJnZXQgPT09IHRoaXMpIGNsb3NlTnVldm8oKTsKICB9KTsKCiAgLy8gLS0tLSBHZXJlbnRlIGlkZW50aWZpY2F0aW9uIGZvcm0gLS0tLQogIHZhciBfcGVuZGluZ1Byb2Nlc28gPSBudWxsOwoKICBmdW5jdGlvbiBzaG93Rm9ybUdlcmVudGUoY2FuZGlkYXRvTm9tYnJlLCBvbkNvbmZpcm0pIHsKICAgIGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCdnZi1jYW5kaWRhdG8tbGFiZWwnKS50ZXh0Q29udGVudCA9ICdNYXJjYW5kbyBlbiBwcm9jZXNvOiAnICsgY2FuZGlkYXRvTm9tYnJlOwogICAgZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ2dmLW5vbWJyZScpLnZhbHVlID0gbG9jYWxTdG9yYWdlLmdldEl0ZW0oJ2dlcmVudGVfbm9tYnJlJykgfHwgJyc7CiAgICBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgnZ2YtY2FyZ28nKS52YWx1ZSA9IGxvY2FsU3RvcmFnZS5nZXRJdGVtKCdnZXJlbnRlX2NhcmdvJykgfHwgJyc7CiAgICBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgnZ2VyZW50ZS1mb3JtLW92ZXJsYXknKS5zdHlsZS5kaXNwbGF5ID0gJ2ZsZXgnOwogICAgX3BlbmRpbmdQcm9jZXNvID0gb25Db25maXJtOwogIH0KCn0pKCk7Cjwvc2NyaXB0Pgo8c2NyaXB0PgpmdW5jdGlvbiBjYW5jZWxhckZvcm1HZXJlbnRlKCkgewogIGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCdnZXJlbnRlLWZvcm0tb3ZlcmxheScpLnN0eWxlLmRpc3BsYXkgPSAnbm9uZSc7CiAgd2luZG93Ll9wZW5kaW5nUHJvY2VzbyA9IG51bGw7Cn0KZnVuY3Rpb24gY29uZmlybWFyRm9ybUdlcmVudGUoKSB7CiAgdmFyIG5vbWJyZSA9IGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCdnZi1ub21icmUnKS52YWx1ZS50cmltKCk7CiAgdmFyIGNhcmdvID0gZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ2dmLWNhcmdvJykudmFsdWUudHJpbSgpOwogIGlmICghbm9tYnJlKSB7IGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCdnZi1ub21icmUnKS5zdHlsZS5ib3JkZXJDb2xvciA9ICcjRUY0NDQ0JzsgcmV0dXJuOyB9CiAgbG9jYWxTdG9yYWdlLnNldEl0ZW0oJ2dlcmVudGVfbm9tYnJlJywgbm9tYnJlKTsKICBsb2NhbFN0b3JhZ2Uuc2V0SXRlbSgnZ2VyZW50ZV9jYXJnbycsIGNhcmdvKTsKICBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgnZ2VyZW50ZS1mb3JtLW92ZXJsYXknKS5zdHlsZS5kaXNwbGF5ID0gJ25vbmUnOwogIC8vIEZpbmQgdGhlIElJRkUtaW50ZXJuYWwgcGVuZGluZyBjYWxsYmFjayB2aWEgZXZlbnQKICBkb2N1bWVudC5kaXNwYXRjaEV2ZW50KG5ldyBDdXN0b21FdmVudCgnZ2VyZW50ZS1jb25maXJtZWQnLCB7IGRldGFpbDogeyBub21icmUsIGNhcmdvIH0gfSkpOwp9Cjwvc2NyaXB0PgoKCjwhLS0gRm9ybXVsYXJpbyBpZGVudGlmaWNhY2nDs24gZ2VyZW50ZSAtLT4KPGRpdiBpZD0iZ2VyZW50ZS1mb3JtLW92ZXJsYXkiIHN0eWxlPSJkaXNwbGF5Om5vbmU7cG9zaXRpb246Zml4ZWQ7aW5zZXQ6MDtiYWNrZ3JvdW5kOnJnYmEoMCwwLDAsMC42KTt6LWluZGV4OjQwMDthbGlnbi1pdGVtczpjZW50ZXI7anVzdGlmeS1jb250ZW50OmNlbnRlcjsiPgogIDxkaXYgc3R5bGU9ImJhY2tncm91bmQ6I2ZmZjtib3JkZXItcmFkaXVzOjE2cHg7cGFkZGluZzozMnB4O3dpZHRoOjkwJTttYXgtd2lkdGg6NDIwcHg7Ym94LXNoYWRvdzowIDIwcHggNjBweCByZ2JhKDAsMCwwLDAuMik7Ij4KICAgIDxoMyBzdHlsZT0iZm9udC1mYW1pbHk6J1NwYWNlIEdyb3Rlc2snLHNhbnMtc2VyaWY7Zm9udC1zaXplOjE4cHg7Zm9udC13ZWlnaHQ6NzAwO21hcmdpbi1ib3R0b206NnB4OyI+wr9RdWnDqW4gZXN0w6EgcmV2aXNhbmRvPzwvaDM+CiAgICA8cCBzdHlsZT0iZm9udC1zaXplOjEzcHg7Y29sb3I6IzZCNzI4MDttYXJnaW4tYm90dG9tOjIwcHg7IiBpZD0iZ2YtY2FuZGlkYXRvLWxhYmVsIj48L3A+CiAgICA8ZGl2IHN0eWxlPSJkaXNwbGF5OmZsZXg7ZmxleC1kaXJlY3Rpb246Y29sdW1uO2dhcDoxMnB4OyI+CiAgICAgIDxkaXY+CiAgICAgICAgPGxhYmVsIHN0eWxlPSJmb250LXNpemU6MTFweDtmb250LXdlaWdodDo2MDA7Y29sb3I6IzlDQTNBRjt0ZXh0LXRyYW5zZm9ybTp1cHBlcmNhc2U7bGV0dGVyLXNwYWNpbmc6MC4wNmVtO2Rpc3BsYXk6YmxvY2s7bWFyZ2luLWJvdHRvbTo0cHg7Ij5UdSBub21icmU8L2xhYmVsPgogICAgICAgIDxpbnB1dCBpZD0iZ2Ytbm9tYnJlIiB0eXBlPSJ0ZXh0IiBwbGFjZWhvbGRlcj0iRWo6IFBhYmxvIEZhamFyZG8iIHN0eWxlPSJ3aWR0aDoxMDAlO3BhZGRpbmc6MTBweCAxMnB4O2JvcmRlcjoxLjVweCBzb2xpZCAjRTRFN0VGO2JvcmRlci1yYWRpdXM6OHB4O2ZvbnQtZmFtaWx5OidETSBTYW5zJyxzYW5zLXNlcmlmO2ZvbnQtc2l6ZToxNHB4O291dGxpbmU6bm9uZTsiIC8+CiAgICAgIDwvZGl2PgogICAgICA8ZGl2PgogICAgICAgIDxsYWJlbCBzdHlsZT0iZm9udC1zaXplOjExcHg7Zm9udC13ZWlnaHQ6NjAwO2NvbG9yOiM5Q0EzQUY7dGV4dC10cmFuc2Zvcm06dXBwZXJjYXNlO2xldHRlci1zcGFjaW5nOjAuMDZlbTtkaXNwbGF5OmJsb2NrO21hcmdpbi1ib3R0b206NHB4OyI+VHUgY2FyZ288L2xhYmVsPgogICAgICAgIDxpbnB1dCBpZD0iZ2YtY2FyZ28iIHR5cGU9InRleHQiIHBsYWNlaG9sZGVyPSJFajogRGlyZWN0b3IgZGUgVGVjbm9sb2fDrWEiIHN0eWxlPSJ3aWR0aDoxMDAlO3BhZGRpbmc6MTBweCAxMnB4O2JvcmRlcjoxLjVweCBzb2xpZCAjRTRFN0VGO2JvcmRlci1yYWRpdXM6OHB4O2ZvbnQtZmFtaWx5OidETSBTYW5zJyxzYW5zLXNlcmlmO2ZvbnQtc2l6ZToxNHB4O291dGxpbmU6bm9uZTsiIC8+CiAgICAgIDwvZGl2PgogICAgPC9kaXY+CiAgICA8ZGl2IHN0eWxlPSJtYXJnaW4tdG9wOjIwcHg7ZGlzcGxheTpmbGV4O2dhcDoxMHB4O2p1c3RpZnktY29udGVudDpmbGV4LWVuZDsiPgogICAgICA8YnV0dG9uIG9uY2xpY2s9ImNhbmNlbGFyRm9ybUdlcmVudGUoKSIgc3R5bGU9InBhZGRpbmc6MTBweCAxOHB4O2JvcmRlci1yYWRpdXM6OHB4O2JvcmRlcjoxLjVweCBzb2xpZCAjRTRFN0VGO2JhY2tncm91bmQ6I2ZmZjtmb250LWZhbWlseTonRE0gU2Fucycsc2Fucy1zZXJpZjtmb250LXNpemU6MTRweDtjdXJzb3I6cG9pbnRlcjtjb2xvcjojNkI3MjgwOyI+Q2FuY2VsYXI8L2J1dHRvbj4KICAgICAgPGJ1dHRvbiBvbmNsaWNrPSJjb25maXJtYXJGb3JtR2VyZW50ZSgpIiBzdHlsZT0icGFkZGluZzoxMHB4IDI0cHg7Ym9yZGVyLXJhZGl1czo4cHg7Ym9yZGVyOm5vbmU7YmFja2dyb3VuZDojRDk3NzA2O2NvbG9yOiNmZmY7Zm9udC1mYW1pbHk6J0RNIFNhbnMnLHNhbnMtc2VyaWY7Zm9udC1zaXplOjE0cHg7Zm9udC13ZWlnaHQ6NjAwO2N1cnNvcjpwb2ludGVyOyI+JiM5MjAwOyBDb25maXJtYXI8L2J1dHRvbj4KICAgIDwvZGl2PgogIDwvZGl2Pgo8L2Rpdj4KCjwhLS0gTW9kYWw6IFJlZmVyaXIgY2FuZGlkYXRvIC0tPgo8ZGl2IGlkPSJyZWZlcmlyLW92ZXJsYXkiIHN0eWxlPSJkaXNwbGF5Om5vbmU7cG9zaXRpb246Zml4ZWQ7aW5zZXQ6MDtiYWNrZ3JvdW5kOnJnYmEoMCwwLDAsMC42KTt6LWluZGV4OjUwMDthbGlnbi1pdGVtczpjZW50ZXI7anVzdGlmeS1jb250ZW50OmNlbnRlcjsiPgogIDxkaXYgc3R5bGU9ImJhY2tncm91bmQ6I2ZmZjtib3JkZXItcmFkaXVzOjE2cHg7cGFkZGluZzozMnB4O3dpZHRoOjkwJTttYXgtd2lkdGg6NDYwcHg7Ym94LXNoYWRvdzowIDIwcHggNjBweCByZ2JhKDAsMCwwLDAuMik7Ij4KICAgIDxoMyBzdHlsZT0iZm9udC1mYW1pbHk6J1NwYWNlIEdyb3Rlc2snLHNhbnMtc2VyaWY7Zm9udC1zaXplOjE4cHg7Zm9udC13ZWlnaHQ6NzAwO21hcmdpbi1ib3R0b206NHB4O2NvbG9yOiMxMTE7Ij5SZWZlcmlyIHVuIGNhbmRpZGF0bzwvaDM+CiAgICA8cCBzdHlsZT0iZm9udC1zaXplOjEzcHg7Y29sb3I6IzZCNzI4MDttYXJnaW4tYm90dG9tOjIwcHg7Ij5Db21wbGV0YSBsb3MgZGF0b3MgeSBzZSBlbnZpYXLDoSB1biBjb3JyZW8gYSBKYW1pcyBjb24gbGEgaW5mb3JtYWNpw7NuLjwvcD4KICAgIDxkaXYgc3R5bGU9ImRpc3BsYXk6ZmxleDtmbGV4LWRpcmVjdGlvbjpjb2x1bW47Z2FwOjEycHg7Ij4KICAgICAgPGRpdj4KICAgICAgICA8bGFiZWwgc3R5bGU9ImZvbnQtc2l6ZToxMXB4O2ZvbnQtd2VpZ2h0OjYwMDtjb2xvcjojOUNBM0FGO3RleHQtdHJhbnNmb3JtOnVwcGVyY2FzZTtsZXR0ZXItc3BhY2luZzowLjA2ZW07ZGlzcGxheTpibG9jazttYXJnaW4tYm90dG9tOjRweDsiPlR1IG5vbWJyZSAqPC9sYWJlbD4KICAgICAgICA8aW5wdXQgaWQ9InJmLXJlZmVyZW50ZSIgdHlwZT0idGV4dCIgcGxhY2Vob2xkZXI9IkVqOiBQYWJsbyBGYWphcmRvIiBzdHlsZT0id2lkdGg6MTAwJTtib3gtc2l6aW5nOmJvcmRlci1ib3g7cGFkZGluZzoxMHB4IDEycHg7Ym9yZGVyOjEuNXB4IHNvbGlkICNFNEU3RUY7Ym9yZGVyLXJhZGl1czo4cHg7Zm9udC1mYW1pbHk6J0RNIFNhbnMnLHNhbnMtc2VyaWY7Zm9udC1zaXplOjE0cHg7b3V0bGluZTpub25lOyIgLz4KICAgICAgPC9kaXY+CiAgICAgIDxkaXY+CiAgICAgICAgPGxhYmVsIHN0eWxlPSJmb250LXNpemU6MTFweDtmb250LXdlaWdodDo2MDA7Y29sb3I6IzlDQTNBRjt0ZXh0LXRyYW5zZm9ybTp1cHBlcmNhc2U7bGV0dGVyLXNwYWNpbmc6MC4wNmVtO2Rpc3BsYXk6YmxvY2s7bWFyZ2luLWJvdHRvbTo0cHg7Ij5Ob21icmUgZGVsIGNhbmRpZGF0byAqPC9sYWJlbD4KICAgICAgICA8aW5wdXQgaWQ9InJmLW5vbWJyZSIgdHlwZT0idGV4dCIgcGxhY2Vob2xkZXI9Ik5vbWJyZSBjb21wbGV0byIgc3R5bGU9IndpZHRoOjEwMCU7Ym94LXNpemluZzpib3JkZXItYm94O3BhZGRpbmc6MTBweCAxMnB4O2JvcmRlcjoxLjVweCBzb2xpZCAjRTRFN0VGO2JvcmRlci1yYWRpdXM6OHB4O2ZvbnQtZmFtaWx5OidETSBTYW5zJyxzYW5zLXNlcmlmO2ZvbnQtc2l6ZToxNHB4O291dGxpbmU6bm9uZTsiIC8+CiAgICAgIDwvZGl2PgogICAgICA8ZGl2PgogICAgICAgIDxsYWJlbCBzdHlsZT0iZm9udC1zaXplOjExcHg7Zm9udC13ZWlnaHQ6NjAwO2NvbG9yOiM5Q0EzQUY7dGV4dC10cmFuc2Zvcm06dXBwZXJjYXNlO2xldHRlci1zcGFjaW5nOjAuMDZlbTtkaXNwbGF5OmJsb2NrO21hcmdpbi1ib3R0b206NHB4OyI+Q2FyZ28gYWwgcXVlIGFwbGljYSAqPC9sYWJlbD4KICAgICAgICA8aW5wdXQgaWQ9InJmLWNhcmdvIiB0eXBlPSJ0ZXh0IiBwbGFjZWhvbGRlcj0iRWo6IERhdGEgU2NpZW50aXN0IiBzdHlsZT0id2lkdGg6MTAwJTtib3gtc2l6aW5nOmJvcmRlci1ib3g7cGFkZGluZzoxMHB4IDEycHg7Ym9yZGVyOjEuNXB4IHNvbGlkICNFNEU3RUY7Ym9yZGVyLXJhZGl1czo4cHg7Zm9udC1mYW1pbHk6J0RNIFNhbnMnLHNhbnMtc2VyaWY7Zm9udC1zaXplOjE0cHg7b3V0bGluZTpub25lOyIgLz4KICAgICAgPC9kaXY+CiAgICAgIDxkaXY+CiAgICAgICAgPGxhYmVsIHN0eWxlPSJmb250LXNpemU6MTFweDtmb250LXdlaWdodDo2MDA7Y29sb3I6IzlDQTNBRjt0ZXh0LXRyYW5zZm9ybTp1cHBlcmNhc2U7bGV0dGVyLXNwYWNpbmc6MC4wNmVtO2Rpc3BsYXk6YmxvY2s7bWFyZ2luLWJvdHRvbTo0cHg7Ij5Db3JyZW8gZGVsIGNhbmRpZGF0bzwvbGFiZWw+CiAgICAgICAgPGlucHV0IGlkPSJyZi1lbWFpbCIgdHlwZT0iZW1haWwiIHBsYWNlaG9sZGVyPSJjYW5kaWRhdG9AZW1haWwuY29tIChvcGNpb25hbCkiIHN0eWxlPSJ3aWR0aDoxMDAlO2JveC1zaXppbmc6Ym9yZGVyLWJveDtwYWRkaW5nOjEwcHggMTJweDtib3JkZXI6MS41cHggc29saWQgI0U0RTdFRjtib3JkZXItcmFkaXVzOjhweDtmb250LWZhbWlseTonRE0gU2Fucycsc2Fucy1zZXJpZjtmb250LXNpemU6MTRweDtvdXRsaW5lOm5vbmU7IiAvPgogICAgICA8L2Rpdj4KICAgICAgPGRpdj4KICAgICAgICA8bGFiZWwgc3R5bGU9ImZvbnQtc2l6ZToxMXB4O2ZvbnQtd2VpZ2h0OjYwMDtjb2xvcjojOUNBM0FGO3RleHQtdHJhbnNmb3JtOnVwcGVyY2FzZTtsZXR0ZXItc3BhY2luZzowLjA2ZW07ZGlzcGxheTpibG9jazttYXJnaW4tYm90dG9tOjRweDsiPk5vdGEgYWRpY2lvbmFsPC9sYWJlbD4KICAgICAgICA8dGV4dGFyZWEgaWQ9InJmLW5vdGEiIHBsYWNlaG9sZGVyPSJQb3IgcXXDqSBsbyByZWNvbWllbmRhcywgZXhwZXJpZW5jaWEgZGVzdGFjYWRhLi4uIiByb3dzPSIzIiBzdHlsZT0id2lkdGg6MTAwJTtib3gtc2l6aW5nOmJvcmRlci1ib3g7cGFkZGluZzoxMHB4IDEycHg7Ym9yZGVyOjEuNXB4IHNvbGlkICNFNEU3RUY7Ym9yZGVyLXJhZGl1czo4cHg7Zm9udC1mYW1pbHk6J0RNIFNhbnMnLHNhbnMtc2VyaWY7Zm9udC1zaXplOjE0cHg7b3V0bGluZTpub25lO3Jlc2l6ZTp2ZXJ0aWNhbDsiPjwvdGV4dGFyZWE+CiAgICAgIDwvZGl2PgogICAgPC9kaXY+CiAgICA8ZGl2IHN0eWxlPSJtYXJnaW4tdG9wOjIwcHg7ZGlzcGxheTpmbGV4O2dhcDoxMHB4O2p1c3RpZnktY29udGVudDpmbGV4LWVuZDsiPgogICAgICA8YnV0dG9uIG9uY2xpY2s9ImNlcnJhckZvcm1SZWZlcmlyKCkiIHN0eWxlPSJwYWRkaW5nOjEwcHggMThweDtib3JkZXItcmFkaXVzOjhweDtib3JkZXI6MS41cHggc29saWQgI0U0RTdFRjtiYWNrZ3JvdW5kOiNmZmY7Zm9udC1mYW1pbHk6J0RNIFNhbnMnLHNhbnMtc2VyaWY7Zm9udC1zaXplOjE0cHg7Y3Vyc29yOnBvaW50ZXI7Y29sb3I6IzZCNzI4MDsiPkNhbmNlbGFyPC9idXR0b24+CiAgICAgIDxidXR0b24gb25jbGljaz0iZW52aWFyUmVmZXJpZG8oKSIgc3R5bGU9InBhZGRpbmc6MTBweCAyNHB4O2JvcmRlci1yYWRpdXM6OHB4O2JvcmRlcjpub25lO2JhY2tncm91bmQ6IzI1NjNFQjtjb2xvcjojZmZmO2ZvbnQtZmFtaWx5OidETSBTYW5zJyxzYW5zLXNlcmlmO2ZvbnQtc2l6ZToxNHB4O2ZvbnQtd2VpZ2h0OjYwMDtjdXJzb3I6cG9pbnRlcjsiPiYjMTI4MjMxOyBFbnZpYXIgcmVmZXJpZG88L2J1dHRvbj4KICAgIDwvZGl2PgogIDwvZGl2Pgo8L2Rpdj4KCjxzY3JpcHQ+CmZ1bmN0aW9uIGFicmlyRm9ybVJlZmVyaXIoKSB7CiAgdmFyIGxhc3RSZWYgPSBsb2NhbFN0b3JhZ2UuZ2V0SXRlbSgnZ2VyZW50ZV9ub21icmUnKSB8fCAnJzsKICBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgncmYtcmVmZXJlbnRlJykudmFsdWUgPSBsYXN0UmVmOwogIGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCdyZi1ub21icmUnKS52YWx1ZSA9ICcnOwogIGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCdyZi1jYXJnbycpLnZhbHVlID0gJyc7CiAgZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ3JmLWVtYWlsJykudmFsdWUgPSAnJzsKICBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgncmYtbm90YScpLnZhbHVlID0gJyc7CiAgWydyZi1yZWZlcmVudGUnLCdyZi1ub21icmUnLCdyZi1jYXJnbyddLmZvckVhY2goZnVuY3Rpb24oaWQpIHsKICAgIGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKGlkKS5zdHlsZS5ib3JkZXJDb2xvciA9ICcjRTRFN0VGJzsKICB9KTsKICBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgncmVmZXJpci1vdmVybGF5Jykuc3R5bGUuZGlzcGxheSA9ICdmbGV4JzsKfQpmdW5jdGlvbiBjZXJyYXJGb3JtUmVmZXJpcigpIHsKICBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgncmVmZXJpci1vdmVybGF5Jykuc3R5bGUuZGlzcGxheSA9ICdub25lJzsKfQpmdW5jdGlvbiBlbnZpYXJSZWZlcmlkbygpIHsKICB2YXIgcmVmZXJlbnRlID0gZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ3JmLXJlZmVyZW50ZScpLnZhbHVlLnRyaW0oKTsKICB2YXIgbm9tYnJlID0gZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ3JmLW5vbWJyZScpLnZhbHVlLnRyaW0oKTsKICB2YXIgY2FyZ28gPSBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgncmYtY2FyZ28nKS52YWx1ZS50cmltKCk7CiAgdmFyIGVtYWlsID0gZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ3JmLWVtYWlsJykudmFsdWUudHJpbSgpOwogIHZhciBub3RhID0gZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ3JmLW5vdGEnKS52YWx1ZS50cmltKCk7CiAgdmFyIHZhbGlkID0gdHJ1ZTsKICBbJ3JmLXJlZmVyZW50ZScsJ3JmLW5vbWJyZScsJ3JmLWNhcmdvJ10uZm9yRWFjaChmdW5jdGlvbihpZCkgewogICAgdmFyIHYgPSBkb2N1bWVudC5nZXRFbGVtZW50QnlJZChpZCkudmFsdWUudHJpbSgpOwogICAgaWYgKCF2KSB7IGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKGlkKS5zdHlsZS5ib3JkZXJDb2xvciA9ICcjRUY0NDQ0JzsgdmFsaWQgPSBmYWxzZTsgfQogICAgZWxzZSB7IGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKGlkKS5zdHlsZS5ib3JkZXJDb2xvciA9ICcjRTRFN0VGJzsgfQogIH0pOwogIGlmICghdmFsaWQpIHJldHVybjsKICBpZiAocmVmZXJlbnRlKSBsb2NhbFN0b3JhZ2Uuc2V0SXRlbSgnZ2VyZW50ZV9ub21icmUnLCByZWZlcmVudGUpOwogIC8vIFdyaXRlIHRvIEZpcmViYXNlCiAgdmFyIGZiQXBwID0gd2luZG93Ll9mYkFwcDsKICBpZiAoZmJBcHApIHsKICAgIHZhciBkYjIgPSBmaXJlYmFzZS5kYXRhYmFzZShmYkFwcCk7CiAgICB2YXIgZW50cnkgPSB7IHJlZmVyZW50ZTogcmVmZXJlbnRlLCBub21icmU6IG5vbWJyZSwgY2FyZ286IGNhcmdvLCBmZWNoYTogbmV3IERhdGUoKS50b0lTT1N0cmluZygpIH07CiAgICBpZiAoZW1haWwpIGVudHJ5LmVtYWlsID0gZW1haWw7CiAgICBpZiAobm90YSkgZW50cnkubm90YSA9IG5vdGE7CiAgICBkYjIucmVmKCdyZWZlcmlkb3NfbnVldm9zJykucHVzaChlbnRyeSkuY2F0Y2goZnVuY3Rpb24oZSkgeyBjb25zb2xlLndhcm4oJ0ZpcmViYXNlIGVycm9yOicsIGUpOyB9KTsKICB9CiAgLy8gQnVpbGQgbWFpbHRvCiAgdmFyIGFzdW50byA9IGVuY29kZVVSSUNvbXBvbmVudCgnW051ZXZvIFJlZmVyaWRvXSAnICsgbm9tYnJlICsgJyDigJMgJyArIGNhcmdvKTsKICAgIHZhciBjdWVycG8gPSAnTlVFVk8gQ0FORElEQVRPIFJFRkVSSURPJyArCiAgICAnXG5cblJlZmVyaWRvIHBvcjogJyArIHJlZmVyZW50ZSArCiAgICAnXG5DYW5kaWRhdG86ICcgKyBub21icmUgKwogICAgJ1xuQ2FyZ28gYWwgcXVlIGFwbGljYTogJyArIGNhcmdvICsKICAgIChlbWFpbCA/ICdcbkNvcnJlbyBjYW5kaWRhdG86ICcgKyBlbWFpbCA6ICcnKSArCiAgICAobm90YSA/ICdcblxuTm90YTogJyArIG5vdGEgOiAnJykgKwogICAgJ1xuXG5GZWNoYTogJyArIG5ldyBEYXRlKCkudG9Mb2NhbGVTdHJpbmcoJ2VzLUNPJykgKwogICAgJ1xuXG4tLS1cbkVudmlhZG8gZGVzZGUgZWwgcG9ydGFsIFJlZmVyaWRvcyBMZWFsJzsKICBjZXJyYXJGb3JtUmVmZXJpcigpOwogIHZhciBtYWlsVXJsID0gJ21haWx0bzpqYW1pcy5nYXJ6b25AbGxhLmNvbT9zdWJqZWN0PScgKyBhc3VudG8gKyAnJmJvZHk9JyArIGVuY29kZVVSSUNvbXBvbmVudChjdWVycG8pOwogIHZhciBhID0gZG9jdW1lbnQuY3JlYXRlRWxlbWVudCgnYScpOwogIGEuaHJlZiA9IG1haWxVcmw7CiAgYS50YXJnZXQgPSAnX2JsYW5rJzsKICBkb2N1bWVudC5ib2R5LmFwcGVuZENoaWxkKGEpOwogIGEuY2xpY2soKTsKICBkb2N1bWVudC5ib2R5LnJlbW92ZUNoaWxkKGEpOwp9CmRvY3VtZW50LmFkZEV2ZW50TGlzdGVuZXIoJ0RPTUNvbnRlbnRMb2FkZWQnLCBmdW5jdGlvbigpIHsKICB2YXIgb3YgPSBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgncmVmZXJpci1vdmVybGF5Jyk7CiAgaWYgKG92KSBvdi5hZGRFdmVudExpc3RlbmVyKCdjbGljaycsIGZ1bmN0aW9uKGUpIHsKICAgIGlmIChlLnRhcmdldCA9PT0gdGhpcykgY2VycmFyRm9ybVJlZmVyaXIoKTsKICB9KTsKfSk7Cjwvc2NyaXB0Pgo8L2JvZHk+CjwvaHRtbD4K");
+  var fullHtml = tb + "var CANDIDATOS = " + jsonData + ";" + ta;
+  var banner = '<div id="__dl_banner" style="position:fixed;top:0;left:0;right:0;z-index:999999;background:#059669;padding:10px 24px;display:flex;align-items:center;gap:14px;font-family:DM Sans,sans-serif;box-shadow:0 2px 8px rgba(0,0,0,0.15)">' +
+    '<span style="color:#fff;font-size:14px;font-weight:600;">Vista previa lista &#x2014; haz clic para descargar</span>' +
+    '<button id="__dl_btn" style="background:#fff;color:#059669;border:none;padding:8px 22px;border-radius:8px;font-weight:700;cursor:pointer;font-size:14px">&#11015; Descargar Index_Referidos.html</button>' +
+    '</div>' +
+    '<script>document.getElementById("__dl_btn").addEventListener("click",function(){' +
+    'var b=document.getElementById("__dl_banner");b.parentNode.removeChild(b);' +
+    'var h=document.documentElement.outerHTML;' +
+    'var bl=new Blob([h],{type:"text/html;charset=utf-8"});' +
+    'var a=document.createElement("a");a.href=URL.createObjectURL(bl);a.download="Index_Referidos.html";' +
+    'document.body.appendChild(a);a.click();document.body.removeChild(a);' +
+    '});<\/script>';
+  var fullWithBanner = fullHtml.replace('</body>', banner + '</body>');
+  var blob = new Blob([fullWithBanner], {type: 'text/html;charset=utf-8'});
+  var url = URL.createObjectURL(blob);
+  window.open(url, '_blank');
+  var t = document.getElementById("toast");
+  t.textContent = "HTML publicable generado — listo para subir a GitHub.";
+  t.classList.add("show");
+  setTimeout(function() { t.classList.remove("show"); }, 3500);
+}
+
+function downloadReporte() {
+  var headers = ['#','Nombre','Referido por','Fecha','Cargo propuesto','Profesión','Universidad',
+    'Años experiencia','Última empresa','Último cargo','LinkedIn','Estado','Entrevistado por','Resumen'];
+  var rows = [headers];
+  var todos = CANDIDATOS.concat(loadNuevos());
+  todos.forEach(function(c, i) {
+    rows.push([i+1, c.nombre, c.referido_por, c.fecha, c.cargo, c.profesion, c.universidad,
+      c.experiencia, c.ultima_empresa, c.ultimo_cargo, c.linkedin,
+      c.estado || 'Disponible', c.entrevistado_por, c.resumen]);
+  });
+  var wb = XLSX.utils.book_new();
+  var ws = XLSX.utils.aoa_to_sheet(rows);
+  // Column widths
+  ws['!cols'] = [4,28,20,12,22,22,28,16,26,24,32,14,18,60].map(function(w){return{wch:w};});
+  // Bold header row
+  var range = XLSX.utils.decode_range(ws['!ref']);
+  for (var C = range.s.c; C <= range.e.c; C++) {
+    var addr = XLSX.utils.encode_cell({r:0, c:C});
+    if (ws[addr]) ws[addr].s = {font:{bold:true}};
+  }
+  XLSX.utils.book_append_sheet(wb, ws, 'Candidatos');
+  XLSX.writeFile(wb, 'Referidos_Leal_' + new Date().toISOString().slice(0,10) + '.xlsx');
+}
+</script>
+<script>
+var CANDIDATOS = [{"nombre": "Diana Marcela Cocuy Bocanegra", "referido_por": "Angie Rodríguez", "fecha": "2026-01-19", "cargo": "Business Analyst", "profesion": "Ingeniería Industrial", "universidad": "UNIVERSIDAD ESCUELA COLOMBIANA DE CARRERAS INDUSTRIALES.", "experiencia": "5 años y medio", "ultima_empresa": "WOM (PARTNERS TELECOM COLOMBIA SAS).", "ultimo_cargo": "Especialista BI", "resumen": "Ingeniera Industrial y Especialista en Analítica Estratégica de Datos, con sólida experiencia en análisis, modelado y visualización de datos para la toma de decisiones, dominio de SQL, Excel avanzado y Power BI. Perfil analítico y orientado a resultados, con participación en iniciativas de Business Intelligence, optimización de procesos y fuerte capacidad de trabajo en equipo y comunicación.", "linkedin": "https://www.linkedin.com/in/diana-marcela-cocuy-8b980b176/", "entrevistado_por": "Juan David", "estado": "Rechazado", "cv_file": "202601_HV DIANA MARCELA COCUY BOCANEGRA.pdf"}, {"nombre": "Maria Alejandra Moncada Agudelo", "referido_por": "Juliana Restrepo", "fecha": "2026-01-19", "cargo": "Data Scientist", "profesion": "Licenciada en Ingeniería Matemática", "universidad": "UNIVERSIDAD EAFIT", "experiencia": "4 años", "ultima_empresa": "Vensure Employer Solutions", "ultimo_cargo": "Data Scientist", "resumen": "Científico de Datos e Ingeniero Matemático con experiencia en ML, NLP y optimización, aplicando Python, R, SQL y Azure para resolver problemas de negocio. Logros destacados incluyen mejora del ROI de marketing en 20%, reducción de tiempos en ~70% y sólida capacidad para comunicar insights estratégicos a audiencias técnicas y no técnicas.", "linkedin": "https://www.linkedin.com/in/alejandra-moncada", "entrevistado_por": "", "estado": "Disponible", "cv_file": "MariaMoncada_englishCV.pdf"}, {"nombre": "Andrea Carvajal Maldonado", "referido_por": "Juliana Restrepo", "fecha": "2026-01-19", "cargo": "Data Analyst", "profesion": "Licenciada en Ingeniería Matemática", "universidad": "UNIVERSIDAD EAFIT", "experiencia": "4 años", "ultima_empresa": "Vensure Employer Solutions", "ultimo_cargo": "Data Analyst", "resumen": "Ingeniero matemático bilingüe con fuerte enfoque en análisis de datos, estadística y Machine Learning, con habilidades en Python, R, Matlab, SQL y Power BI. Destaca por su pensamiento lógico, liderazgo, trabajo en equipos interdisciplinarios y comunicación efectiva.", "linkedin": "https://www.linkedin.com/in/andreacarvajalm/", "entrevistado_por": "", "estado": "Disponible", "cv_file": "Andrea_Carvajal_CV2025.pdf"}, {"nombre": "Eduardo Garcia Llamas", "referido_por": "Nicole Castro", "fecha": "2026-01-19", "cargo": "Data Scientist", "profesion": "Ingeniería Industrial para la dirección", "universidad": "Universidad Anáhuac Querétaro", "experiencia": "5 años y medio", "ultima_empresa": "XERTICA.AI", "ultimo_cargo": "Data Scientist", "resumen": "Científico de Datos con experiencia en los sectores retail y tecnológico, enfocado en aplicar analítica avanzada para identificar oportunidades de crecimiento y eficiencia operativa. Perfil orientado al cliente y a la generación de valor estratégico a partir de los datos.", "linkedin": "https://www.linkedin.com/in/egllamas", "entrevistado_por": "", "estado": "Disponible", "cv_file": "CV Eduardo Garcia Llamas.pdf"}, {"nombre": "Astaroth Elizabethson", "referido_por": "Benjamín León", "fecha": "2026-01-19", "cargo": "Data Scientist", "profesion": "Licenciatura en Física, Licenciatura en Matemáticas", "universidad": "Universidad de los Andes", "experiencia": "16 años", "ultima_empresa": "BACU", "ultimo_cargo": "Analista de Control Operacional y Soporte de Datos", "resumen": "Físico y matemático con vocación docente, experiencia en educación y programación (Matlab, Java, R y SQL), especializado en Machine Learning supervisado aplicado a bases de datos astronómicas. Destaca por sus habilidades sociales, liderazgo, trabajo en equipo y capacidad para enseñar eficazmente.", "linkedin": "https://www.linkedin.com/in/astaroth-elizabethson/", "entrevistado_por": "", "estado": "Disponible", "cv_file": "AstarothCurriculumVitaeInd.pdf"}, {"nombre": "Eivar Moreno", "referido_por": "Angie Rodríguez", "fecha": "2026-01-21", "cargo": "CBM Analyst", "profesion": "Ingeniería Mecatronica", "universidad": "Técnico Central", "experiencia": "7 años", "ultima_empresa": "WOM (PARTNERS TELECOM COLOMBIA SAS).", "ultimo_cargo": "Especialista Self Service", "resumen": "Profesional con experiencia en diseño de CX y liderazgo de proyectos de transformación digital, especializado en optimización de procesos mediante modelos de IA. Experto en implementación de IVR, chatbots y automatización conversacional de alto impacto y escalable.", "linkedin": "https://www.linkedin.com/in/eivar-aly-moreno-pinz%C3%B3n-531707211/", "entrevistado_por": "", "estado": "Disponible", "cv_file": "HV Eivar Moreno.pdf"}, {"nombre": "Diana Carolina Zeledón Quintero", "referido_por": "Nicole Castro", "fecha": "2026-01-28", "cargo": "Data Scientist", "profesion": "Ingeniería de Sistemas y Computación", "universidad": "Universidad Tecnológica de Panamá", "experiencia": "2 años", "ultima_empresa": "Cochez y Cia S.A", "ultimo_cargo": "Data Scientist", "resumen": "Científico de Datos e Ingeniero de Sistemas especializado en IA Generativa, con experiencia en desarrollo y optimización de pipelines de datos y chatbots avanzados. Dominio de Google Cloud Platform (GCP) para impulsar innovación y resolver problemas complejos de negocio.", "linkedin": "https://www.linkedin.com/in/diana-carolina-zeled%C3%B3n-03a623263/", "entrevistado_por": "Jeanette", "estado": "Contratado", "cv_file": "DianaZeledon_CV_en_2026.pdf"}, {"nombre": "Santiago Tovar", "referido_por": "Nicole Castro", "fecha": "2026-01-29", "cargo": "Data Analytics/BI Engineer.", "profesion": "Ingeniería Industrial", "universidad": "Universidad de los Andes", "experiencia": "5 años y 3 meses", "ultima_empresa": "SPACE ANALYTICS", "ultimo_cargo": "Founder & Head of Operations", "resumen": "Analista de Negocio / Ingeniero de Analítica con más de 5 años de experiencia transformando problemas complejos en soluciones basadas en datos. Especialista en conectar áreas de negocio y equipos técnicos, utilizando SQL, Python, DBT y herramientas de BI para gestionar proyectos de punta a punta, desde el levantamiento de requisitos hasta la entrega de dashboards.", "linkedin": "https://linkedin.com/in/santiago-tovar-cardona", "entrevistado_por": "Jeanette", "estado": "Disponible", "cv_file": "Santiago Tovar CV (BA_AnalyticsEngineer).pdf"}, {"nombre": "Andrés Guerrero Ortíz", "referido_por": "Danilo Plazas", "fecha": "2026-02-03", "cargo": "Business Analyst", "profesion": "Ingeniería de Software (en curso)", "universidad": "Corporación Iberoamericana de\nEducación Superior", "experiencia": "5 años", "ultima_empresa": "Concentrix International Colombia S.A.S", "ultimo_cargo": "Professional, Bi Analyst", "resumen": "Perfil analítico, proactivo y planificador, con fuerte orientación al trabajo en equipo, comunicación efectiva y compromiso. Persona adaptable, autónoma en el aprendizaje y en constante desarrollo profesional.", "linkedin": "https://www.linkedin.com/in/andr%C3%A9s-guerrero-ort%C3%ADz-5473b6203/", "entrevistado_por": "", "estado": "Disponible", "cv_file": "CV. Andrés Guerrero 2026.pdf"}, {"nombre": "Sebastian Pineda", "referido_por": "Juan Valencia Arias", "fecha": "2026-02-11", "cargo": "Business Analyst", "profesion": "Administración de empresas", "universidad": "Universidad del Quindı́o", "experiencia": "4 años y medio", "ultima_empresa": "Bell", "ultimo_cargo": "Sales Specialist", "resumen": "Profesional analítico con Maestría en Investigación de Operaciones y Estadística, y más de 5 años de experiencia en sectores financiero y telecomunicaciones. Experto en Python, SQL y Excel para modelar impacto de negocio y generar insights financieros orientados a ROI y eficiencia operativa mediante analítica avanzada.", "linkedin": "https://linkedin.com/in/sebastianpinedav/", "entrevistado_por": "", "estado": "Disponible", "cv_file": "CV Sebastian Pineda.pdf"}, {"nombre": "Paola Andrea Yepes Zuleta", "referido_por": "Santiago Gonzalez Quiroz", "fecha": "2026-02-13", "cargo": "Business Analyst", "profesion": "Ingeniería en productividad y calidad", "universidad": "Politécnico Jaime Isaza Cadavid", "experiencia": "5 años y medio", "ultima_empresa": "AMRIZE BSC (HOLCIM ABS)", "ultimo_cargo": "Buyer", "resumen": "Ingeniera de Productividad y Calidad con más de 4 años de experiencia en sourcing, análisis de datos y optimización de procesos, enfocado en la construcción de KPIs para la toma de decisiones. Experto en SAP, SIESA, Excel avanzado y herramientas BI (Qlik, Looker), con conocimientos en SQL y Python y alta adaptabilidad a entornos dinámicos orientados a resultados.", "linkedin": "https://www.linkedin.com/in/paola-yepes-0aa8701b8/", "entrevistado_por": "", "estado": "Disponible", "cv_file": "CV PAOLA YEPES.pdf"}, {"nombre": "Laura Montoya Jaramillo", "referido_por": "Santiago Monsalve", "fecha": "2026-02-19", "cargo": "Business Analyst", "profesion": "Economista", "universidad": "Universidad EAFIT", "experiencia": "7 años y medio", "ultima_empresa": "SURA Tech", "ultimo_cargo": "Analytics & BI", "resumen": "Data Analyst y Especialista BI con experiencia en insurtech y retail, liderando iniciativas de analítica orientadas a maximizar rentabilidad y optimizar procesos comerciales. Experto en segmentación, forecasting y monitoreo de KPIs, con enfoque en insights accionables, liderazgo y trabajo transversal para impulsar innovación y mejora continua.", "linkedin": "https://www.linkedin.com/in/laura-montoya-jaramillo/", "entrevistado_por": "", "estado": "Disponible", "cv_file": "CV LAURA MONTOYA J 2026.pdf"}, {"nombre": "Jose David Larsen Pantoja", "referido_por": "Daniel Castaño", "fecha": "2026-03-09", "cargo": "Business Analyst", "profesion": "Economista", "universidad": "Universidad del Valle", "experiencia": "9 años", "ultima_empresa": "Fondo de Empleados de la Cámara de Comercio de Cali", "ultimo_cargo": "Miembro de Junta Directiva", "resumen": "Economista con especialización en Finanzas y Maestría en Administración Financiera, con más de 8 años de experiencia en análisis de datos, control de gestión y análisis financiero para la toma de decisiones estratégicas. Actualmente Coordinador Operativo, liderando equipos, modelos analíticos y presupuestales, con fuerte enfoque en storytelling y generación de insights para negocio.", "linkedin": "https://linkedin.com/in/jose-david-larsen-01501314a", "entrevistado_por": "Juan David", "estado": "Contratado", "cv_file": "CV_Jose_David_Larsen.pdf"}, {"nombre": "Juan Camilo Sutachan Trujillo", "referido_por": "Mónica Viveros", "fecha": "2026-03-10", "cargo": "Data Scientist", "profesion": "Ingeniero Mecatrónico", "universidad": "Universidad Militar Nueva Granada", "experiencia": "4 años", "ultima_empresa": "SLB", "ultimo_cargo": "Data Engineer", "resumen": "Ingeniero Mecatrónico orientado a datos con 4 años de experiencia en automatización, análisis de datos y business intelligence. Experto en soluciones escalables con Python, SQL, Airflow, BigQuery y GCP, destacándose por optimizar operaciones mediante automatización y visualización avanzada impulsada por IA.", "linkedin": "https://www.linkedin.com/in/juan-camilo-st/?locale=es_ES", "entrevistado_por": "Juan Robles", "estado": "Contratado", "cv_file": "Resume - Juan Camilo Sutachan Trujillo.pdf"}, {"nombre": "Pablo Rey Moreno", "referido_por": "Nicole Castro", "fecha": "2026-03-30", "cargo": "Business Analyst", "profesion": "Administración de Empresas", "universidad": "Pontifica Universidad Javeriana", "experiencia": "5 años", "ultima_empresa": "Omni.Pro", "ultimo_cargo": "Performance Analyst", "resumen": "Analista de Datos y Performance con más de 4 años de experiencia en analítica de marketing, enfocado en medición de desempeño y generación de insights accionables. Especialista en dashboards, KPIs y automatización de reportes, con manejo de Excel y Power BI y fuerte capacidad de comunicación para la toma de decisiones estratégicas.", "linkedin": "https://www.linkedin.com/in/pablo-rey-moreno/", "entrevistado_por": "Jeanette", "estado": "Contratado", "cv_file": "CV - Pablo Rey Moreno (5).pdf"}, {"nombre": "María Alejandra Dávila S", "referido_por": "Daniel Rojo", "fecha": "2026-05-08", "cargo": "Manager", "profesion": "Ingeniera Electrónica", "universidad": "Universidad del Norte", "experiencia": "10 años", "ultima_empresa": "Emtelco", "ultimo_cargo": "Consultor líder de IA", "resumen": "Experta en Analítica de Datos, BI e IA con más de 12 años de experiencia, enfocada en transformar insights en iniciativas estratégicas de alto impacto. Destaca por su liderazgo de equipos analíticos, pensamiento estratégico y capacidad para alinear la analítica con los objetivos del negocio.", "linkedin": "", "entrevistado_por": "", "estado": "Disponible", "cv_file": "María Alejandra Dávila.pdf"}, {"nombre": "Kelly Johana Jiménez A", "referido_por": "Daniel Rojo", "fecha": "2026-05-08", "cargo": "Manager", "profesion": "Estadística", "universidad": "Universidad Nacional de Colombia", "experiencia": "12 años", "ultima_empresa": "TIGO", "ultimo_cargo": "Supervisora de Operación Regional", "resumen": "Estadística con Maestría en Ingeniería Analítica y más de 10 años de experiencia liderando iniciativas de advanced analytics, customer experience y analítica predictiva en telecomunicaciones. Experta en SQL, AWS y liderazgo de equipos multidisciplinarios, transformando grandes volúmenes de datos en estrategias de optimización operativa, experiencia de cliente y retención.", "linkedin": "", "entrevistado_por": "", "estado": "Disponible", "cv_file": "CV_KellyJohannaJiménezAvalos.pdf"}, {"nombre": "Juliana Restrepo Tobar", "referido_por": "Gregorio Perez Bernal", "fecha": "2026-01-16", "cargo": "Data Scientist", "profesion": "Ingeniería Matemática", "universidad": "Universidad EAFIT", "experiencia": "3 años", "ultima_empresa": "FinCrime Dynamics", "ultimo_cargo": "Data Scientist", "resumen": "Ingeniero Matemático con énfasis en Ciencias de la Computación, experto en Python y con experiencia en Java, SQL, MATLAB y R, especializado en herramientas de Machine Learning y analítica avanzada como PyTorch, scikit-learn, AWS y MLflow. Perfil bilingüe/trilingüe con sólida formación técnica y enfoque en desarrollo de soluciones analíticas escalables.", "linkedin": "https://linkedin.com/in/julianarpot/", "entrevistado_por": "Iván", "estado": "Contratado", "cv_file": "Juliana Restrepo CV 2025.pdf"}, {"nombre": "Andres Villarreal", "referido_por": "Rolando Riley", "fecha": "2026-03-27", "cargo": "Data Engineer", "profesion": "Ingeniería de Sistemas de Información", "universidad": "Universidad Tecnológica De Panamá", "experiencia": "3 años", "ultima_empresa": "Signify (Philips Lighting)", "ultimo_cargo": "Data Transportation Analyst", "resumen": "Profesional orientado a transformar datos en valor para la toma de decisiones, enfocado en garantizar calidad y eficiencia en procesos de análisis de datos. Destaca por su adaptabilidad, trabajo en equipo y aprendizaje continuo para generar soluciones efectivas de negocio.", "linkedin": "https://www.linkedin.com/in/andrés-villarreal-7205b2263", "entrevistado_por": "Iván", "estado": "Contratado", "cv_file": "andres_villarreal_cv.pdf"}, {"nombre": "Mariana Yepes", "referido_por": "Juliana Restrepo", "fecha": "2026-05-15", "cargo": "Data Scientist", "profesion": "Ingeniería Matemática", "universidad": "Universidad EAFIT", "experiencia": "3 años", "ultima_empresa": "Tributi – Fintech Tax Automation SaaS", "ultimo_cargo": "Business & Product Analyst", "resumen": "Científico de Datos e Ingeniero Matemático con más de 3 años de experiencia desarrollando modelos de ML y deep learning aplicados a problemas operativos reales, con publicación científica en revista Q1 de Elsevier. Destaca por su capacidad para transformar problemas complejos en soluciones accionables y comunicar insights a equipos técnicos y de negocio.", "linkedin": "", "entrevistado_por": "", "estado": "Disponible", "cv_file": "Mariana_Yepes_CV_LLA_DataScientist.pdf"}, {"nombre": "Juan Franco", "referido_por": "Andrés Villareal", "fecha": "2026-06-09", "cargo": "Data Engineer", "profesion": "Ingeniería de Sistemas de Información", "universidad": "Universidad Tecnológica De Panamá", "experiencia": "3 años", "ultima_empresa": "The Estée Lauder Companies Inc.", "ultimo_cargo": "Business Intelligence & Analytics Analyst", "resumen": "Data Engineer con más de 3 años de experiencia diseñando y operando pipelines de datos end-to-end en Azure Databricks, especializado en arquitecturas Medallion, ETL/ELT y modelado de datos. Destaca por desarrollar soluciones escalables y de nivel productivo, colaborando con equipos de analítica, ciencia de datos y negocio para generar productos de datos confiables y de alto impacto.", "linkedin": "https://www.linkedin.com/in/juan-franco-aa0571337/", "entrevistado_por": "", "estado": "Disponible", "cv_file": "CV Juan Franco.pdf"}, {"nombre": "Leonardo Franco", "referido_por": "José Zerna", "fecha": "2026-06-09", "cargo": "Data Engineer", "profesion": "Licenciatura en Ciberseguridad", "universidad": "Universidad Tecnológica De Panamá", "experiencia": "2 años", "ultima_empresa": "Edupan S.A.", "ultimo_cargo": "Staff Software & Data Engineer", "resumen": "Data & Cloud Engineer con más de 2 años de experiencia en diseño y operación de pipelines de datos e infraestructura cloud en GCP y AWS, utilizando Airflow, Spark, Databricks, Terraform y Kubernetes. Destaca por desarrollar soluciones escalables bajo prácticas DevSecOps, automatización mediante Infraestructura como Código (IaC) y despliegue de plataformas reutilizables de alto impacto.", "linkedin": "https://linkedin.com/in/l-franco28", "entrevistado_por": "", "estado": "Disponible", "cv_file": "Leonardo_Franco_DataEngineer.pdf"}, {"nombre": "Juan José Eraso", "referido_por": "Daniel Castaño", "fecha": "2026-02-19", "cargo": "Business Analyst", "profesion": "Economista", "universidad": "Universidad del Valle", "experiencia": "1 año y medio", "ultima_empresa": "Cámara de Comercio de Cali", "ultimo_cargo": "Economic & Business Intelligence Analyst", "resumen": "Economista y analista de datos con experiencia en segmentación de clientes, inteligencia de negocios y automatización de procesos analíticos. Especializado en transformar grandes volúmenes de datos en información estratégica para la toma de decisiones comerciales y la gestión del valor del cliente. Con conocimientos en Python, SQL y técnicas de Machine Learning aplicadas a modelos de clustering y segmentación. Orientado a resultados, con enfoque en la eficiencia operativa, el análisis de rentabilidad y el desarrollo de estrategias que impulsen la retención de clientes y el crecimiento de los ingresos.", "linkedin": "https://linkedin.com/in/juan-eraso-479850298", "entrevistado_por": "Pablo Fajardo", "estado": "En proceso", "cv_file": "CV_JuanJoseEraso_EN_ATS.pdf"}, {"nombre": "Eber David Baracaldo Galeano", "referido_por": "Julián Acevedo", "fecha": "2026-02-19", "cargo": "Business Analyst", "profesion": "Economista", "universidad": "Universidad Nacional de Colombia", "experiencia": "3 años", "ultima_empresa": "Solvo S.A.S.", "ultimo_cargo": "Reporting Analyst", "resumen": "Economista y Reporting Analyst con experiencia en análisis operativo, inteligencia de negocios y automatización de procesos orientados a la toma de decisiones basada en datos. Especializado en el desarrollo de soluciones analíticas mediante Python, SQL, Microsoft Fabric, Power BI y Power Automate, diseñando pipelines de datos, dashboards ejecutivos y flujos automatizados que han logrado reducir hasta en un 98% los tiempos de ejecución y adelantar entregas hasta 14 días antes de los plazos establecidos. Experiencia en la estructuración, depuración y análisis de datos críticos, optimización de modelos de cálculo y soporte técnico transversal a equipos operativos, contribuyendo a la eficiencia operativa, la mejora continua y la generación de valor para el negocio.", "linkedin": "https://linkedin.com/in/eberbaracaldo", "entrevistado_por": "", "estado": "Disponible", "cv_file": "CVEBERDAVIDBARACALDOGALEANO.pdf"}, {"nombre": "Juan David Marín Gómez", "referido_por": "Pablo Fajardo", "fecha": "2026-06-24", "cargo": "Data Scientist", "profesion": "Ingeniería Aeronáutica", "universidad": "Universidad Pontificia\nBolivariana", "experiencia": "7 años", "ultima_empresa": "Asurion", "ultimo_cargo": "Business Intelligence & Data Analyst", "resumen": "Analista de Datos enfocado en analítica operativa y de negocio, con experiencia en gestión de activos, optimización de procesos y análisis de indicadores de desempeño. Especializado en transformar datos en información accionable que facilite la toma de decisiones estratégicas y la mejora continua de las operaciones. Cuenta con experiencia en monitoreo de KPIs, automatización de procesos, coordinación de proyectos y análisis de métricas operativas. Destaca por su capacidad analítica, pensamiento crítico y orientación a resultados. Actualmente fortalece sus competencias en SQL, Python, Power BI, Excel Avanzado y técnicas de análisis de datos para generar soluciones de alto impacto empresarial.", "linkedin": "", "entrevistado_por": "Pablo Fajardo", "estado": "En proceso", "cv_file": "Juan_David_Marin_Gomez_CV_EN.pdf"}, {"nombre": "Juan Idarraga", "referido_por": "Pablo Fajardo", "fecha": "2026-06-24", "cargo": "Data Scientist", "profesion": "Ingeniero Químico", "universidad": "Universidad Nacional de Colombia", "experiencia": "3 años", "ultima_empresa": "LeoVegas Group", "ultimo_cargo": "Live Trader - Sports data analysis", "resumen": "Científico de Datos Junior con más de un año de experiencia desarrollando modelos predictivos y soluciones analíticas para la toma de decisiones. Experiencia en modelos de clasificación y regresión utilizando scikit-learn, XGBoost, árboles de decisión y Random Forest. Manejo de Python y librerías como pandas, NumPy, matplotlib, seaborn, statsmodels y scipy para análisis exploratorio y modelado estadístico. Capacidad para desarrollar pipelines de datos de extremo a extremo, desde el preprocesamiento hasta el despliegue de modelos. Experiencia en detección de anomalías, reconocimiento de patrones y monitoreo en tiempo real, transformando datos complejos en información accionable para el negocio.", "linkedin": "", "entrevistado_por": "", "estado": "Disponible", "cv_file": "CV_Juan_Idarraga.pdf"}, {"nombre": "Andrés Felipe González Calderón", "referido_por": "Jamis Garzón", "fecha": "2026-06-24", "cargo": "Data Scientist", "profesion": "Diseñador Gráfico", "universidad": "Universidad Jorge Tadeo Lozano", "experiencia": "6 años", "ultima_empresa": "Lean Solutions Group", "ultimo_cargo": "Coordinador Logístico de Datos", "resumen": "Profesional bilingüe (Inglés B2) con más de 5 años de experiencia liderando operaciones logísticas y transformando grandes volúmenes de información en decisiones estratégicas. Especialista en Análisis de Datos y en el desarrollo e integración de Agentes de IA para la automatización de procesos. Experto en Python, SQL, Power BI y orquestación de datos. Capacidad demostrada para optimizar la eficiencia operativa, diseñar pipelines de datos y generar soluciones tecnológicas orientadas al negocio.", "linkedin": "", "entrevistado_por": "", "estado": "Disponible", "cv_file": "Hoja de Vida Andrés AD.pdf"}, {"nombre": "Daniel Donado", "referido_por": "Nicole Castro", "fecha": "2026-06-26", "cargo": "Business Analyst", "profesion": "Ingeniero Industrial", "universidad": "Universidad de los Andes", "experiencia": "4 años", "ultima_empresa": "SourceForge", "ultimo_cargo": "Software Marketing Specialist", "resumen": "Profesional en Ingeniería Industrial con experiencia en operaciones, gestión comercial y coordinación de proyectos. Ha desempeñado roles de atención y gestión de clientes, apoyando a empresas de software en el análisis del desempeño de productos y la identificación de oportunidades de crecimiento. Cuenta con habilidades en optimización de procesos, gestión de CRM, análisis de datos y trabajo colaborativo con equipos multidisciplinarios. Orientado a resultados, con enfoque en la eficiencia operativa, la generación de valor para el cliente y el fortalecimiento de relaciones comerciales de largo plazo.", "linkedin": "", "entrevistado_por": "Pablo Fajardo", "estado": "En proceso", "cv_file": "Daniel_Donado.pdf"}, {"nombre": "Santiago Henao U.", "referido_por": "Erick Translateur", "fecha": "2026-06-26", "cargo": "Business Analyst", "profesion": "Ingeniero Industrial", "universidad": "Universidad de los Andes", "experiencia": "9 años", "ultima_empresa": "NU Bank", "ultimo_cargo": "Senior Business Analyst, Global Core Banking", "resumen": "Profesional en Estrategia de Datos con más de 8 años de experiencia utilizando analítica, visión de producto e insights operativos para resolver problemas de negocio en sectores como fintech, retail, banca, e-commerce y SaaS. Cuenta con experiencia en consultoría, investigación de mercados y organizaciones tecnológicas de alto crecimiento. Especializado en conectar áreas de negocio y equipos técnicos, definir marcos de indicadores (KPIs), mejorar la calidad de los datos y transformar análisis complejos en recomendaciones accionables. Orientado a generar impacto en productos, procesos, políticas y resultados de negocio mediante el uso estratégico de los datos", "linkedin": "", "entrevistado_por": "", "estado": "Disponible", "cv_file": "CV SHU English 2026.pdf"}, {"nombre": "Felipe De Ycaza Dutari", "referido_por": "Nicole Castro", "fecha": "2026-06-29", "cargo": "Business Analyst", "profesion": "Administración De Negocios Y Logística", "universidad": "ADEN University", "experiencia": "5 años", "ultima_empresa": "HEINEKEN Panama", "ultimo_cargo": "Supervisor De Asociación Comercial Y Operaciones,", "resumen": "Supervisor de Operaciones Comerciales con experiencia en liderazgo de equipos, gestión de proyectos y optimización de procesos. Trayectoria en compañías de consumo masivo liderando iniciativas multifuncionales, fortaleciendo relaciones con clientes y grupos de interés, e impulsando mejoras operativas. Especializado en desarrollo de negocios, ejecución comercial, gestión de alianzas estratégicas y coordinación organizacional. Orientado a resultados, con capacidad para identificar oportunidades de crecimiento, mejorar la eficiencia operativa y garantizar el cumplimiento de objetivos comerciales. Dominio de español e inglés.", "linkedin": "", "entrevistado_por": "", "estado": "Disponible", "cv_file": "Felipe_DeYcazaDutari_Resume_Español (2).pdf"}, {"nombre": "Carlos Jesús González Cerrud", "referido_por": "Nicole Castro", "fecha": "2026-06-29", "cargo": "Data Scientist", "profesion": "Licenciatura En Ingeniería en Sistemas y Computación", "universidad": "Universidad Tecnológica de Panamá", "experiencia": "2 años", "ultima_empresa": "ASSA Compañia de Seguros", "ultimo_cargo": "Ingeniero de Datos", "resumen": "Ingeniero en Sistemas enfocado en ingeniería de datos y modernización de plataformas analíticas. Experiencia en construcción de pipelines de datos, ingestión desde múltiples fuentes y modelado de datasets utilizando Databricks y dbt para soportar analítica y reporting empresarial.", "linkedin": "https://www.linkedin.com/in/cxrlosjesus", "entrevistado_por": "", "estado": "Disponible", "cv_file": "cv_carlos_jesus.pdf"}, {"nombre": "Alexander Vega Carvajal", "referido_por": "(Reservado)", "fecha": "2026-07-07", "cargo": "Data Scientist", "profesion": "Economista", "universidad": "Universidad de los Andes", "experiencia": "10 años", "ultima_empresa": "Kilimo", "ultimo_cargo": "Data Scientist", "resumen": "Economista con experiencia en el desarrollo de soluciones de Machine Learning e integración de datos para organizaciones del sector público y privado. Especializado en Python, SQL avanzado, modelado y análisis de datos, con conocimientos en visualización mediante Power BI y estadística aplicada. Cuenta con experiencia en el desarrollo y despliegue de modelos de ML en AWS, construcción de pipelines ETL/ELT e implementación de soluciones de IA generativa. Destaca por su capacidad para convertir datos en información estratégica y apoyar la toma de decisiones mediante indicadores de negocio (KPIs).", "linkedin": "", "entrevistado_por": "", "estado": "Disponible", "cv_file": "CV_Alexander_Vega_2026_ES.pdf"}, {"nombre": "Andrés Eduardo Guevara", "referido_por": "(Reservado)", "fecha": "2026-07-07", "cargo": "Data Scientist", "profesion": "Ingeniería de Sistemas", "universidad": "Fundación Universitaria Los Libertadores", "experiencia": "10 años", "ultima_empresa": "DIAN", "ultimo_cargo": "Analista III QA)", "resumen": "Ingeniero de Sistemas con experiencia en administración, mantenimiento y análisis de bases de datos SQL y Oracle, incluyendo actualización, inserción y generación de informes para apoyar los procesos del negocio. Especializado en la organización, digitalización y resguardo de información, garantizando acceso eficiente y confidencialidad de los datos. Cuenta con experiencia trabajando en conjunto con equipos de Administración de Bases de Datos para desarrollar reportes útiles para la empresa, manejo de versiones SQL Server 2008 y Oracle en adelante, así como herramientas de gestión y testing como JIRA. Destaca por su capacidad analítica, trabajo en equipo, planificación y orientación al cumplimiento de políticas y procedimientos.", "linkedin": "", "entrevistado_por": "", "estado": "Disponible", "cv_file": "HojaDeVidaAEGA2026.pdf"}, {"nombre": "Juan José Ariza", "referido_por": "(Reservado)", "fecha": "2026-07-07", "cargo": "Data Engineer", "profesion": "Ingeniería de Sistemas", "universidad": "Universidad Pedagógica y Tecnológica de Colombia", "experiencia": "4 años", "ultima_empresa": "Publicis Groupe", "ultimo_cargo": "ML Ops Analyst", "resumen": "Ingeniero de Sistemas y Computación con más de 3 años de experiencia en ingeniería de datos, automatización de procesos, desarrollo de software y Business Intelligence. Especializado en el diseño de pipelines de datos (ETL/ELT) con Python y SQL, modelado y administración de bases de datos, integración de APIs y desarrollo de dashboards en Power BI para la toma de decisiones. Cuenta con experiencia en MLOps, despliegue de soluciones en la nube (Google Cloud y Docker) y gestión de modelos de inteligencia artificial, incluyendo LLMs. Orientado a transformar datos en soluciones que generen valor para el negocio.", "linkedin": "https://linkedin.com/in/juan-arizaaa46541b5", "entrevistado_por": "", "estado": "Disponible", "cv_file": "CV_Juan_Ariza.pdf"}, {"nombre": "Miguel Eduardo Rodríguez", "referido_por": "(Reservado)", "fecha": "2026-07-07", "cargo": "Data Engineer", "profesion": "Ingeniero Industrial", "universidad": "Universidad de la Costa Barranquilla", "experiencia": "3 años", "ultima_empresa": "Coopidrogas", "ultimo_cargo": "Profesional BI", "resumen": "Ingeniero Industrial con experiencia en analítica de datos e inteligencia de negocios. Especializado en el desarrollo de dashboards con Power BI, Tableau y Looker Studio, así como en la consulta y administración de bases de datos en MySQL, SQL Server y PostgreSQL. Cuenta con conocimientos en Python para el desarrollo de procesos ETL y la implementación de modelos de Machine Learning. Destaca por su capacidad analítica, proactividad, adaptabilidad a entornos ágiles y enfoque en la generación de soluciones basadas en datos para apoyar la toma de decisiones.", "linkedin": "", "entrevistado_por": "", "estado": "Disponible", "cv_file": "Hoja de vida - Miguel Rodríguez.pdf"}, {"nombre": "Francisco Ocampo", "referido_por": "(Reservado)", "fecha": "2026-07-07", "cargo": "Data Scientist", "profesion": "Ingeniería de Sistemas", "universidad": "Universidad Nacional de Colombia", "experiencia": "1 año", "ultima_empresa": "Meddipay", "ultimo_cargo": "Data Scientist", "resumen": "Ingeniero de Sistemas con experiencia en inteligencia artificial, aprendizaje automático y analítica de datos, especializado en el desarrollo de soluciones para evaluación de riesgo crediticio y analítica financiera. Cuenta con experiencia en la construcción de modelos predictivos, redes neuronales, sistemas de análisis de datos, automatización de procesos y aplicaciones basadas en modelos de lenguaje (LLMs). Ha participado en proyectos multidisciplinarios relacionados con física computacional, neurociencia, sistemas dinámicos y procesamiento digital de imágenes. Orientado a desarrollar soluciones tecnológicas basadas en datos para apoyar la toma de decisiones estratégicas.", "linkedin": "https://linkedin.com/in/franciscoocampob", "entrevistado_por": "", "estado": "Disponible", "cv_file": "Francisco_Ocampo_CV_EN.pdf"}, {"nombre": "Taniah Zoel Poveda Suárez", "referido_por": "(Reservado)", "fecha": "2026-07-07", "cargo": "Data Scientist", "profesion": "Ingeniería de Sistemas", "universidad": "Fundación Universitaria Juan de Castellanos", "experiencia": "3 años", "ultima_empresa": "NGP Technologies SAS", "ultimo_cargo": "Desarrolladora FullStack — Freelance", "resumen": "Ingeniera de Sistemas con sólida experiencia en automatización de pruebas, desarrollo FullStack y fundamentos de ciencia de datos. Participé en un proyecto de investigación en Machine Learning aplicado a educación (tesis meritoria). Habilidades en Python, Java, SQL, Power BI, APIs REST y metodologías ágiles. Orientada a transformar datos en soluciones de alto impacto en entornos corporativos y de consultoría.", "linkedin": "", "entrevistado_por": "", "estado": "Disponible", "cv_file": "Taniah Zoel Poveda DataScientist Artefact.docx"}, {"nombre": "DidierAlexander Motta", "referido_por": "(Reservado)", "fecha": "2026-07-07", "cargo": "Data Scientist", "profesion": "Economista", "universidad": "Universidad Pedagógica y Tecnológica de Colombia", "experiencia": "4 años", "ultima_empresa": "Banco de la República", "ultimo_cargo": "Profesional — Sector Externo", "resumen": "Economista y Magíster en Finanzas con experiencia en banca central y análisis de datos macroeconómicos y financieros. Especializado en el procesamiento y análisis de grandes volúmenes de información para apoyar la toma de decisiones de política económica y financiera. Cuenta con sólidos conocimientos en herramientas de automatización, visualización de datos e inteligencia artificial aplicada, orientados a optimizar procesos analíticos e investigativos. Destaca por su capacidad para transformar datos complejos en información estratégica de alto valor para la toma de decisiones.", "linkedin": "https://www.linkedin.com/in/didier-alexander-motta-molina-007434282/", "entrevistado_por": "", "estado": "Disponible", "cv_file": "HV_Didier_Motta.pdf"}, {"nombre": "Juan Carlos Romero Reina", "referido_por": "(Reservado)", "fecha": "2026-07-07", "cargo": "Data Scientist", "profesion": "Matemáticas aplicadas", "universidad": "Pontificia Universidad Javeriana", "experiencia": "10 años", "ultima_empresa": "Rappi", "ultimo_cargo": "Senior Data Scientist II", "resumen": "Científico de Datos Senior y Matemático Aplicado con más de 10 años de experiencia desarrollando soluciones de analítica avanzada y aprendizaje automático para sectores como finanzas, seguros, industria e investigación. Especializado en sistemas de recomendación, modelos predictivos, series de tiempo, aprendizaje por ensamble y soluciones basadas en modelos de lenguaje (LLMs). Cuenta con experiencia liderando equipos técnicos, implementando plataformas MLOps en Azure ML y Databricks, y comunicando resultados analíticos a niveles ejecutivos. Destaca por su sólida formación en matemáticas aplicadas y su capacidad para desarrollar soluciones de alto impacto orientadas al negocio.", "linkedin": "https://linkedin.com/in/juan-romero-r", "entrevistado_por": "", "estado": "Disponible", "cv_file": "CV Juan Romero 2026.docx"}, {"nombre": "Adrián Nicolás Chamorro", "referido_por": "Jamis Garzón", "fecha": "2026-07-07", "cargo": "Data Scientist", "profesion": "Ingeniería Física", "universidad": "Universidad Nacional de Colombia", "experiencia": "8 años", "ultima_empresa": "AGROSAVIA", "ultimo_cargo": "Profesional de Apoyo a la Investigación", "resumen": "Ingeniero Físico y Especialista en Analítica de Datos con experiencia en procesamiento, transformación y análisis de grandes volúmenes de información mediante Python y SQL. Especializado en Business Analytics, Machine Learning y desarrollo de modelos predictivos para optimizar procesos y apoyar la toma de decisiones. Cuenta con experiencia en la construcción de pipelines ETL, automatización de procesos, análisis exploratorio de datos y desarrollo de dashboards en Power BI y Shiny. Destaca por su capacidad para identificar oportunidades de mejora mediante técnicas estadísticas y generar soluciones escalables orientadas al negocio.", "linkedin": "", "entrevistado_por": "", "estado": "Disponible", "cv_file": "Hoja_de_Vida_Adrian_Chamorro.pdf"}, {"nombre": "Felipe Penagos", "referido_por": "(Reservado)", "fecha": "2026-07-07", "cargo": "Data Scientist", "profesion": "Ingeniería Electrónica", "universidad": "Universidad Distrital Francisco José de Caldas", "experiencia": "4 años", "ultima_empresa": "Hitss ‑ Claro Colombia", "ultimo_cargo": "Científico de Datos", "resumen": "Científico de Datos con más de 2 años de experiencia en los sectores de tecnología y telecomunicaciones, especializado en analítica predictiva y modelado estadístico para optimizar la retención de clientes, la segmentación y la predicción de abandono (churn). Cuenta con experiencia en el procesamiento de grandes volúmenes de datos utilizando Python, SQL, PySpark y Databricks, así como en el desarrollo de modelos de Machine Learning con scikit-learn y XGBoost. Orientado a transformar datos en estrategias de negocio que impulsen la eficiencia operativa, el crecimiento de ingresos y la mejora de la experiencia del cliente.", "linkedin": "https://www.linkedin.com/in/felipe-penagos-rodr%C3%ADguez/", "entrevistado_por": "", "estado": "Disponible", "cv_file": "CV_es_Felipe_Penagos_2025.pdf"}, {"nombre": "Iván Barbero", "referido_por": "Francisco Kehrhahn", "fecha": "2026-07-13", "cargo": "AI Lead", "profesion": "Ingeniería Electrónica", "universidad": "Universidad Tecnológica de Panamá", "experiencia": "9 años", "ultima_empresa": "IT Consultant - LATAM North", "ultimo_cargo": "Ernst & Young", "resumen": "Consultor de Tecnología Bilingüe con más de 7 años de experiencia liderando iniciativas de transformación digital y proyectos de medios de pago en América Latina. Especializado en traducir objetivos de negocio en planes de implementación, coordinando equipos multidisciplinarios y gestionando proyectos tecnológicos de gran escala en entornos altamente regulados. Cuenta con experiencia en relacionamiento con ejecutivos y proveedores, combinando conocimientos de consultoría, tecnología y gestión operativa. Destaca por el uso de inteligencia artificial y automatización para optimizar procesos, mejorar la productividad y fortalecer la ejecución de proyectos.", "linkedin": "https://linkedin.com/in/ivánbarbero", "entrevistado_por": "", "estado": "Disponible", "cv_file": "Resume - Ivan Barbero.pdf"}, {"nombre": "Kevin Danilo Serrano Abril", "referido_por": "Sebastian Tejada", "fecha": "2026-07-14", "cargo": "Data Scientist", "profesion": "Estadística", "universidad": "Universidad Nacional de Colombia", "experiencia": "8 años", "ultima_empresa": "Data Technical Lead", "ultimo_cargo": "BPT", "resumen": "Ingeniero de Datos Senior con más de 7 años de experiencia en ingeniería y analítica de datos. Especializado en el diseño de procesos ETL, migración de data warehouses y desarrollo de modelos predictivos utilizando Machine Learning. Cuenta con experiencia en Databricks, Azure y Power BI, liderando proyectos bajo metodologías ágiles y colaborando con equipos multidisciplinarios. Destaca por su capacidad analítica, enfoque estratégico y orientación a la mejora continua, desarrollando soluciones innovadoras que generan valor para el negocio.", "linkedin": "", "entrevistado_por": "", "estado": "Disponible", "cv_file": "CV Kevin Serrano 2026-2.pdf"}, {"nombre": "Candelaria Valencia Montoya", "referido_por": "Angie Rodríguez", "fecha": "2026-07-16", "cargo": "Customer Care", "profesion": "Comunicación Social - Periodismo", "universidad": "Universidad Pontificia Bolivariana.", "experiencia": "9 años", "ultima_empresa": "Gerente Operaciones Servicio al Cliente", "ultimo_cargo": "Avianca", "resumen": "Comunicadora Social y Magíster en Mercadeo con más de 12 años de experiencia liderando estrategias de servicio y experiencia del cliente en los sectores de transporte y moda. Ha gestionado equipos multiculturales en Latinoamérica, liderando equipos directos e indirectos para fortalecer la satisfacción y fidelización de clientes. Especializada en gestión de servicio, resolución de crisis, liderazgo y relacionamiento con clientes de alto valor. Cuenta con experiencia en herramientas digitales, plataformas de atención al cliente y uso de inteligencia artificial para mejorar la productividad y la experiencia del cliente.", "linkedin": "https://www.linkedin.com/in/candelaria-valencia/", "entrevistado_por": "", "estado": "Disponible", "cv_file": "CV- Candelaria Valencia M Jul 2026.docx.pdf"}, {"nombre": "Sonia Olaya", "referido_por": "Jamis Garzón", "fecha": "2026-07-22", "cargo": "Data Scientist", "profesion": "Ingeniería Industrial", "universidad": "Universidad de la Salle", "experiencia": "5 años y medio", "ultima_empresa": "Consultor Analítica", "ultimo_cargo": "Claro Colombia", "resumen": "Ingeniera Industrial con Maestría en Inteligencia Analítica de Datos y experiencia en análisis de datos, aprendizaje automático y arquitectura en la nube. Especializada en el desarrollo de modelos analíticos utilizando Python, SQL, Tableau y bases de datos, aplicando metodologías como CRISP-DM y prácticas de MLOps. Cuenta con conocimientos en Machine Learning, Deep Learning y Procesamiento de Lenguaje Natural (NLP). Destaca por su capacidad analítica, liderazgo, adaptabilidad y orientación al desarrollo de soluciones basadas en datos para la toma de decisiones.", "linkedin": "https://linkedin.com/in/soniaolaya/", "entrevistado_por": "", "estado": "Disponible", "cv_file": "CV_Español_Sonia_Olaya_2026.pdf"}, {"nombre": "Manuela Salazar Iglesias", "referido_por": "Santiago Quiroz", "fecha": "2026-07-30", "cargo": "Data Scientist", "profesion": "Ingeniería Química", "universidad": "Universidad Nacional de Colombia", "experiencia": "5 años y medio", "ultima_empresa": "DS Engineer", "ultimo_cargo": "Mercado Libre", "resumen": "Científico de Datos e Ingeniero de Machine Learning con más de 5 años de experiencia desarrollando soluciones de analítica avanzada e inteligencia artificial para los sectores financiero, comercio electrónico, salud y consumo masivo. Especializado en liderar proyectos de extremo a extremo, desde el diseño e implementación de modelos predictivos hasta la comunicación de resultados a niveles ejecutivos. Cuenta con experiencia en el uso de herramientas y agentes de IA para acelerar el análisis y la toma de decisiones. Posee una Maestría en Inteligencia Artificial y un enfoque orientado a generar impacto de negocio mediante soluciones basadas en datos.", "linkedin": "", "entrevistado_por": "", "estado": "Disponible", "cv_file": "CV_ManuelaSalazar__English_ (1).pdf"}, {"nombre": "Luz Aponte Bocanegra", "referido_por": "Jamis Garzón", "fecha": "2026-08-11", "cargo": "Data Scientist", "profesion": "Estadística", "universidad": "Universidad Nacional de Colombia", "experiencia": "14 años", "ultima_empresa": "Keyrus", "ultimo_cargo": "Consultor Ciencia de Datos", "resumen": "Profesional en Estadística con Maestría en Finanzas Corporativas y amplia experiencia en analítica avanzada y estrategia de datos en los sectores financiero, cobranzas y consultoría. Especializado en Data Mining, Machine Learning y Deep Learning, desde la conceptualización hasta el despliegue y automatización de soluciones mediante R, Python y SQL. Cuenta con experiencia en Big Data, herramientas cloud y desarrollo de dashboards en Power BI y Looker. Ha liderado equipos multidisciplinarios, alineando capacidades analíticas con objetivos de negocio para generar rentabilidad y valor a partir de los datos.", "linkedin": "https://www.linkedin.com/in/luz-aponte-bocanegra/", "entrevistado_por": "", "estado": "Disponible", "cv_file": "Luz Aponte Bocanegra.pdf"}, {"nombre": "Andres Felipe Gonzalez", "referido_por": "Miguel Angel Martin", "fecha": "2026-08-21", "cargo": "Manager", "profesion": "Ingeniero de Producción Industrial", "universidad": "Universidad Distrital Francisco José de Caldas", "experiencia": "8 años", "ultima_empresa": "BSSC – Delta Air Lines", "ultimo_cargo": "Project Manager", "resumen": "Ingeniero Industrial y Project Manager con más de 7 años de experiencia liderando iniciativas de transformación digital, optimización de cadena de suministro y analítica de datos para operaciones en Estados Unidos. Experiencia gestionando proyectos empresariales de TI y supply chain en áreas de compras, inventarios, almacenamiento, mantenimiento y TechOps. Durante más de 2 años ha liderado equipos multidisciplinarios y más de 20 proyectos simultáneos, desarrollando soluciones de automatización, analítica, pipelines ETL/ELT, dashboards en Power BI y soluciones de IA. Cuenta con experiencia en Python, Power Apps, AWS y tecnologías Microsoft, además de desarrollo web y aplicaciones personalizadas.", "linkedin": "", "entrevistado_por": "", "estado": "Disponible", "cv_file": "Andres_Gonzalez_Updated_CV_06-2026.pdf"}];
+</script>
+<div class="modal-overlay" id="modal-nuevo-overlay">
+  <div class="modal" style="max-width:540px;">
+    <div class="modal-header">
+      <div class="modal-header-text">
+        <div class="modal-name">Agregar candidato</div>
+        <div style="font-size:13px;color:#9CA3AF;margin-top:4px;">El candidato se guardará en el portal y podrás verlo en la grilla.</div>
+      </div>
+      <button class="btn-close" onclick="closeNuevo()">&#10005;</button>
+    </div>
+    <div class="modal-body">
+      <form id="form-nuevo" onsubmit="submitNuevo(event)">
+        <div class="form-grid">
+          <div class="form-group"><label>Nombre completo <span class="form-required">*</span></label><input type="text" id="fn-nombre" required></div>
+          <div class="form-group"><label>Cargo propuesto <span class="form-required">*</span></label><input type="text" id="fn-cargo" required></div>
+          <div class="form-group"><label>Referido por <span class="form-required">*</span></label><input type="text" id="fn-referido" required></div>
+          <div class="form-group"><label>Email del candidato</label><input type="email" id="fn-email"></div>
+          <div class="form-group"><label>Teléfono</label><input type="text" id="fn-telefono"></div>
+          <div class="form-group"><label>LinkedIn</label><input type="text" id="fn-linkedin"></div>
+          <div class="form-group"><label>Nombre del archivo CV</label><input type="text" id="fn-cvfile" placeholder="Ej: CV_Luz_Aponte.pdf"></div>
+          <div class="form-group"><label>Profesión</label><input type="text" id="fn-profesion"></div>
+          <div class="form-group"><label>Universidad</label><input type="text" id="fn-universidad"></div>
+          <div class="form-group"><label>Años de experiencia</label><input type="text" id="fn-experiencia"></div>
+          <div class="form-group"><label>Última empresa</label><input type="text" id="fn-empresa"></div>
+          <div class="form-group form-full"><label>Último cargo</label><input type="text" id="fn-ucargo"></div>
+          <div class="form-group form-full"><label>Resumen del perfil <span class="form-required">*</span></label><textarea id="fn-resumen" required></textarea></div>
+        </div>
+        
+        <div class="modal-actions" style="margin-top:16px;">
+          <button type="submit" class="btn-action btn-primary">&#10003; Guardar candidato</button>
+          <button type="button" class="btn-action btn-secondary" onclick="closeNuevo()">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-csv-overlay">
+  <div class="modal" style="max-width:680px;">
+    <div class="modal-header">
+      <div class="modal-header-text">
+        <div class="modal-name">Exportar candidatos</div>
+        <div style="font-size:13px;color:#9CA3AF;margin-top:4px;">Copia el contenido y pégalo en Excel: celda A1 → Datos → Texto en columnas → Delimitado por coma.</div>
+      </div>
+      <button class="btn-close" onclick="closeCsv()">&#10005;</button>
+    </div>
+    <div class="modal-body">
+      <textarea id="csv-content" readonly style="width:100%;height:260px;font-family:monospace;font-size:11px;padding:10px;border:1px solid #E4E7EF;border-radius:6px;resize:none;color:#4B5563;background:#F7F8FC;outline:none;"></textarea>
+      <div style="display:flex;gap:10px;margin-top:14px;">
+        <button id="btn-copy-csv" class="btn-action btn-primary" onclick="copyCsv()" style="flex:1;">Copiar todo</button>
+        <button class="btn-action btn-secondary" onclick="closeCsv()" style="flex:1;">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+(function() {
+  // Firebase config
+  const firebaseConfig = {
+    apiKey: "AIzaSyBwZXPv8cZL9H0D2wwjgYb7jBEi9yoN9hQ",
+    authDomain: "referidos-leal.firebaseapp.com",
+    databaseURL: "https://referidos-leal-default-rtdb.firebaseio.com",
+    projectId: "referidos-leal",
+    storageBucket: "referidos-leal.firebasestorage.app",
+    messagingSenderId: "435417996161",
+    appId: "1:435417996161:web:b4016b4562f600516f2680"
+  };
+  if (!window._fbApp) {
+    window._fbApp = firebase.initializeApp(firebaseConfig);
+  }
+  const db = firebase.database(window._fbApp);
+  const FB_REF = 'estados';
+  const FB_HIST = 'historial';
+
+  function loadOverrides() { return {}; }
+  function saveOverrides(obj) {
+    db.ref(FB_REF).set(obj).catch(function(e) { console.warn('Firebase write error:', e); });
+  }
+  function logHistorial(candidatoNombre, accion, actor, actorCargo) {
+    var entry = { accion: accion, actor: actor || 'Admin', fecha: new Date().toISOString() };
+    if (actorCargo) entry.cargo = actorCargo;
+    db.ref(FB_HIST + '/' + candidatoNombre).push(entry).catch(function(e) { console.warn('Historial write error:', e); });
+  }
+
+  window.showFormAdmin = function(candidatoNombre, accionLabel, callback) {
+    var overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:9999;display:flex;align-items:center;justify-content:center;';
+    overlay.innerHTML = '<div style="background:#fff;border-radius:14px;padding:28px 28px 22px;width:340px;max-width:92vw;box-shadow:0 8px 32px rgba(0,0,0,0.18);">' +
+      '<div style="font-size:15px;font-weight:600;color:#111;margin-bottom:4px;">Confirmar acción</div>' +
+      '<div style="font-size:13px;color:#666;margin-bottom:18px;">' + accionLabel + ': <strong>' + candidatoNombre + '</strong></div>' +
+      '<label style="font-size:12px;font-weight:500;color:#555;display:block;margin-bottom:4px;">Tu nombre</label>' +
+      '<input id="fa-nombre" type="text" placeholder="Ej. Jamis Garzón" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1.5px solid #ddd;border-radius:8px;font-size:13px;margin-bottom:14px;outline:none;" />' +
+      '<div style="display:flex;gap:10px;justify-content:flex-end;">' +
+        '<button id="fa-cancel" style="padding:8px 18px;border:1.5px solid #ddd;background:#fff;border-radius:8px;font-size:13px;cursor:pointer;color:#555;">Cancelar</button>' +
+        '<button id="fa-ok" style="padding:8px 18px;border:none;background:#2563EB;color:#fff;border-radius:8px;font-size:13px;cursor:pointer;font-weight:500;">Confirmar</button>' +
+      '</div>' +
+    '</div>';
+    document.body.appendChild(overlay);
+    var inp = overlay.querySelector('#fa-nombre');
+    inp.focus();
+    var lastNombre = localStorage.getItem('admin_nombre') || '';
+    if (lastNombre) inp.value = lastNombre;
+    overlay.querySelector('#fa-cancel').onclick = function() { document.body.removeChild(overlay); };
+    overlay.querySelector('#fa-ok').onclick = function() {
+      var nombre = inp.value.trim() || 'Admin';
+      localStorage.setItem('admin_nombre', nombre);
+      document.body.removeChild(overlay);
+      callback(nombre);
+    };
+    inp.addEventListener('keydown', function(e) { if (e.key === 'Enter') overlay.querySelector('#fa-ok').click(); });
+  }
+
+  let candidatos = [], filtered = [], overrides = {}, currentFilter = 'todos', currentCargo = 'todos', currentSearch = '', currentIdx = null;
+
+  function estadoEfectivo(c) { return overrides[c.nombre] ? (overrides[c.nombre].estado || 'En proceso') : (c.estado || 'Disponible'); }
+  function estadoClass(e) {
+    const m = { 'Disponible': 'disponible', 'En proceso': 'en-proceso', 'Contratado': 'contratado', 'Rechazado': 'rechazado', 'Desistió': 'desistio' };
+    return m[e] || 'disponible';
+  }
+  function estadoLabel(e) { if (!e || e === 'None') return 'Disponible'; return e; }
+
+  function updateStats(data) {
+    document.getElementById('stat-total').textContent = data.length;
+    document.getElementById('stat-disp').textContent = data.filter(c => estadoEfectivo(c) === 'Disponible').length;
+    document.getElementById('stat-proc').textContent = data.filter(c => estadoEfectivo(c) === 'En proceso').length;
+    document.getElementById('stat-cont').textContent = data.filter(c => estadoEfectivo(c) === 'Contratado').length;
+    document.getElementById('stat-rech').textContent = data.filter(c => estadoEfectivo(c) === 'Rechazado').length;
+    document.getElementById('stat-des').textContent = data.filter(c => estadoEfectivo(c) === 'Desistió').length;
+  }
+
+  function notifyAdmin(nombre, nuevoEstado) {
+    // Admin no necesita notificarse a sí mismo
+  }
+
+  function renderEstadoActions(container, c, est, note) {
+    container.innerHTML = '';
+    var label = document.createElement('div');
+    label.className = 'estado-section-label';
+    label.textContent = 'Actualizar estado';
+    container.appendChild(label);
+    var row = document.createElement('div');
+    row.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;';
+    container.appendChild(row);
+
+    function makeBtn(text, cls, onClick) {
+      var b = document.createElement('button');
+      b.className = 'btn-action ' + cls;
+      b.style.flex = '1';
+      b.innerHTML = text;
+      b.addEventListener('click', onClick);
+      return b;
+    }
+
+    if (est === 'Disponible') {
+      (function(_c, _idx) {
+        row.appendChild(makeBtn('&#9200; Marcar en proceso', 'btn-proceso', function() {
+          var __c = _c, __idx = _idx;
+          showFormAdmin(__c.nombre, 'Marcar en proceso', function(actor) {
+            overrides[__c.nombre] = { estado: 'En proceso', fecha: new Date().toISOString() };
+            saveOverrides(overrides); logHistorial(__c.nombre, 'En proceso', actor, null);
+            updateStats(candidatos); applyFilters();
+            var _ni = filtered.findIndex(function(x){return x.nombre===__c.nombre;});
+            if (_ni >= 0) { openModal(_ni); } else { closeModal(); }
+          });
+        }));
+        row.appendChild(makeBtn('&#128073; Desistió', 'btn-desistio', function() {
+          var __c = _c, __idx = _idx;
+          showFormAdmin(__c.nombre, 'Marcar como Desistió', function(actor) {
+            overrides[__c.nombre] = { estado: 'Desistió', fecha: new Date().toISOString() };
+            saveOverrides(overrides); logHistorial(__c.nombre, 'Desistió', actor, null);
+            updateStats(candidatos); applyFilters();
+            var _ni = filtered.findIndex(function(x){return x.nombre===__c.nombre;});
+            if (_ni >= 0) { openModal(_ni); } else { closeModal(); }
+          });
+        }));
+      })(c, currentIdx);
+
+    } else if (est === 'En proceso') {
+      // Always allow reverting to Disponible, regardless of source
+      (function(_c, _idx) {
+        row.appendChild(makeBtn('&#8635; Desmarcar proceso', 'btn-secondary', function() {
+          var __c = _c, __idx = _idx;
+          showFormAdmin(__c.nombre, 'Desmarcar proceso', function(actor) {
+            overrides[__c.nombre] = { estado: 'Disponible', fecha: new Date().toISOString() };
+            saveOverrides(overrides); logHistorial(__c.nombre, 'Desmarcado (vuelve a Disponible)', actor, null);
+            updateStats(candidatos); applyFilters();
+            var _ni = filtered.findIndex(function(x){return x.nombre===__c.nombre;});
+            if (_ni >= 0) { openModal(_ni); } else { closeModal(); }
+          });
+        }));
+        row.appendChild(makeBtn('&#10003; Contratado', 'btn-contratado', function() {
+          var __c = _c, __idx = _idx;
+          showFormAdmin(__c.nombre, 'Marcar como Contratado', function(actor) {
+            overrides[__c.nombre] = { estado: 'Contratado', fecha: new Date().toISOString() };
+            saveOverrides(overrides); logHistorial(__c.nombre, 'Contratado', actor, null);
+            updateStats(candidatos); applyFilters();
+            var _ni = filtered.findIndex(function(x){return x.nombre===__c.nombre;});
+            if (_ni >= 0) { openModal(_ni); } else { closeModal(); }
+          });
+        }));
+        row.appendChild(makeBtn('&#10005; Rechazado', 'btn-rechazado', function() {
+          var __c = _c, __idx = _idx;
+          showFormAdmin(__c.nombre, 'Marcar como Rechazado', function(actor) {
+            overrides[__c.nombre] = { estado: 'Rechazado', fecha: new Date().toISOString() };
+            saveOverrides(overrides); logHistorial(__c.nombre, 'Rechazado', actor, null);
+            updateStats(candidatos); applyFilters();
+            var _ni = filtered.findIndex(function(x){return x.nombre===__c.nombre;});
+            if (_ni >= 0) { openModal(_ni); } else { closeModal(); }
+          });
+        }));
+        row.appendChild(makeBtn('&#128073; Desistió', 'btn-desistio', function() {
+          var __c = _c, __idx = _idx;
+          showFormAdmin(__c.nombre, 'Marcar como Desistió', function(actor) {
+            overrides[__c.nombre] = { estado: 'Desistió', fecha: new Date().toISOString() };
+            saveOverrides(overrides); logHistorial(__c.nombre, 'Desistió', actor, null);
+            updateStats(candidatos); applyFilters();
+            var _ni = filtered.findIndex(function(x){return x.nombre===__c.nombre;});
+            if (_ni >= 0) { openModal(_ni); } else { closeModal(); }
+          });
+        }));
+      })(c, currentIdx);
+
+    } else if (est === 'Contratado') {
+      (function(_c, _idx) {
+        if (overrides[_c.nombre]) {
+          row.appendChild(makeBtn('&#8635; Revertir estado', 'btn-secondary', function() {
+            delete overrides[_c.nombre]; saveOverrides(overrides);
+            logHistorial(_c.nombre, 'Revertido a Disponible (desde Contratado)', 'Admin (Jamis)', null); // no form needed for revert
+            updateStats(candidatos); applyFilters(); openModal(_idx);
+          }));
+        } else {
+          var info3 = document.createElement('span');
+          info3.style.cssText = 'font-size:12px;color:var(--text-3);';
+          info3.textContent = 'Estado registrado en la base de datos.';
+          row.appendChild(info3);
+        }
+      })(c, currentIdx);
+    } else if (est === 'Rechazado') {
+      (function(_c, _idx) {
+        if (overrides[_c.nombre]) {
+          row.appendChild(makeBtn('&#8635; Revertir estado', 'btn-secondary', function() {
+            delete overrides[_c.nombre]; saveOverrides(overrides);
+            logHistorial(_c.nombre, 'Revertido a Disponible (desde Rechazado)', 'Admin (Jamis)', null); // no form
+            updateStats(candidatos); applyFilters(); openModal(_idx);
+          }));
+        }
+        row.appendChild(makeBtn('&#9200; Iniciar nuevo proceso', 'btn-proceso', function() {
+          var __c = _c, __idx = _idx;
+          showFormAdmin(__c.nombre, 'Iniciar nuevo proceso', function(actor) {
+            overrides[__c.nombre] = { estado: 'En proceso', fecha: new Date().toISOString() };
+            saveOverrides(overrides); logHistorial(__c.nombre, 'En proceso (nuevo proceso)', actor, null);
+            updateStats(candidatos); applyFilters();
+            var _ni = filtered.findIndex(function(x){return x.nombre===__c.nombre;});
+            if (_ni >= 0) { openModal(_ni); } else { closeModal(); }
+          });
+        }));
+      })(c, currentIdx);
+    } else if (est === 'Desistió') {
+      (function(_c, _idx) {
+        row.appendChild(makeBtn('&#8635; Revertir a Disponible', 'btn-secondary', function() {
+          delete overrides[_c.nombre]; saveOverrides(overrides);
+          logHistorial(_c.nombre, 'Revertido a Disponible (desde Desistió)', 'Admin (Jamis)', null); // no form
+          updateStats(candidatos); applyFilters(); openModal(_idx);
+        }));
+        row.appendChild(makeBtn('&#9200; Iniciar nuevo proceso', 'btn-proceso', function() {
+          var __c = _c, __idx = _idx;
+          showFormAdmin(__c.nombre, 'Iniciar nuevo proceso', function(actor) {
+            overrides[__c.nombre] = { estado: 'En proceso', fecha: new Date().toISOString() };
+            saveOverrides(overrides); logHistorial(__c.nombre, 'En proceso (reactivado desde Desistió)', actor, null);
+            updateStats(candidatos); applyFilters();
+            var _ni = filtered.findIndex(function(x){return x.nombre===__c.nombre;});
+            if (_ni >= 0) { openModal(_ni); } else { closeModal(); }
+          });
+        }));
+      })(c, currentIdx);
+    }
+  }
+
+  function applyFilters() {
+    const q = currentSearch.toLowerCase().trim();
+    filtered = candidatos.filter(c => {
+      const est = estadoEfectivo(c);
+      if (currentFilter !== 'todos' && est !== currentFilter) return false;
+      if (currentCargo !== 'todos' && (c.cargo || '').trim() !== currentCargo) return false;
+      if (q) {
+        const hay = [c.nombre, c.cargo, c.profesion, c.ultima_empresa, c.ultimo_cargo, c.resumen, c.referido_por].join(' ').toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+    var sortVal = (document.getElementById('sort-select') || {}).value || 'fecha-desc';
+    filtered.sort(function(a, b) {
+      if (sortVal === 'alfa') return (a.nombre || '').localeCompare(b.nombre || '', 'es');
+      var da = a.fecha || '0', db = b.fecha || '0';
+      if (sortVal === 'fecha-asc') return da < db ? -1 : da > db ? 1 : 0;
+      return da > db ? -1 : da < db ? 1 : 0; // fecha-desc default
+    });
+    renderGrid();
+    document.getElementById('results-count').textContent = filtered.length + ' candidato' + (filtered.length !== 1 ? 's' : '');
+  }
+
+  function esc(s) {
+    if (!s) return '';
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function renderGrid() {
+    const grid = document.getElementById('grid');
+    if (!filtered.length) {
+      grid.innerHTML = '<div class="empty"><div class="empty-icon">&#128269;</div><p>No hay candidatos que coincidan con los filtros.</p></div>';
+      return;
+    }
+    grid.innerHTML = filtered.map((c, i) => {
+      const est = estadoEfectivo(c), cls = estadoClass(est);
+      return '<div class="card" data-idx="' + i + '" tabindex="0">' +
+        '<div class="card-stripe ' + cls + '"></div>' +
+        '<div class="card-body">' +
+          '<div class="card-top">' +
+            '<div class="card-name">' + esc(c.nombre) + '</div>' +
+            '<span class="badge ' + cls + '">' + estadoLabel(est) + '</span>' +
+          '</div>' +
+          '<div class="card-cargo">' + esc(c.cargo || 'Sin cargo definido') + '</div>' +
+          '<div class="card-meta">' +
+            (c.experiencia ? '<span>' + esc(c.experiencia) + '</span>' : '') +
+            (c.ultima_empresa ? '<span>' + esc(c.ultima_empresa) + '</span>' : '') +
+          '</div>' +
+          (c.resumen ? '<p class="card-resumen">' + esc(c.resumen) + '</p>' : '') +
+        '</div>' +
+        '<div class="card-footer">' +
+          '<div class="ref-info">' + (c._local ? '<span class="badge-local">Nuevo &#9679;</span> ' : '') + 'Referido por <strong>' + esc(c.referido_por || '—') + '</strong>' + (c.fecha ? '<span style="color:var(--text-4);font-size:11px;margin-left:6px;">· ' + c.fecha + '</span>' : '') + '</div>' +
+          '<div style="display:flex;gap:6px;align-items:center;">' +
+          (c._local ? '<button class="btn-delete-card" title="Eliminar candidato" onclick="event.stopPropagation();window._leal&&window._leal.deleteCandidate(' + i + ')">&#128465;</button>' : '') +
+          '<button class="btn-ver">Ver perfil →</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+    grid.querySelectorAll('.card').forEach(card => {
+      card.addEventListener('click', () => openModal(parseInt(card.dataset.idx)));
+      card.addEventListener('keydown', e => { if (e.key === 'Enter') openModal(parseInt(card.dataset.idx)); });
+    });
+  }
+
+  function openModal(idx) {
+    currentIdx = idx;
+    const c = filtered[idx];
+    const est = estadoEfectivo(c), cls = estadoClass(est);
+    document.getElementById('m-nombre').textContent = c.nombre;
+    document.getElementById('m-cargo').textContent = c.cargo || '';
+    const badge = document.getElementById('m-estado-badge');
+    badge.textContent = estadoLabel(est); badge.className = 'badge ' + cls;
+    document.getElementById('m-resumen').textContent = c.resumen || '';
+    document.getElementById('m-resumen-section').style.display = c.resumen ? '' : 'none';
+    document.getElementById('m-exp').textContent = c.experiencia || '—';
+    document.getElementById('m-empresa').textContent = c.ultima_empresa || '—';
+    document.getElementById('m-ucargo').textContent = c.ultimo_cargo || '—';
+    document.getElementById('m-prof').textContent = c.profesion || '—';
+    document.getElementById('m-uni').textContent = c.universidad || '—';
+    document.getElementById('m-ref').textContent = c.referido_por || '—';
+    const procSec = document.getElementById('m-proceso-section');
+    const ov = overrides[c.nombre] || {};
+    const hasEntrevistado = !!c.entrevistado_por;
+    const hasGerenteInfo = ov.gerente_nombre || ov.gerente_cargo;
+    if (hasEntrevistado || hasGerenteInfo) {
+      procSec.style.display = '';
+      document.getElementById('m-entpor').textContent = c.entrevistado_por || '—';
+      // Gerente info from Firebase override
+      var gerenteRow = document.getElementById('m-gerente-row');
+      var gcargoRow = document.getElementById('m-gcargo-row');
+      var gfechaRow = document.getElementById('m-gfecha-row');
+      if (ov.gerente_nombre) {
+        gerenteRow.style.display = '';
+        document.getElementById('m-gerente-nombre').textContent = ov.gerente_nombre;
+      } else { gerenteRow.style.display = 'none'; }
+      if (ov.gerente_cargo) {
+        gcargoRow.style.display = '';
+        document.getElementById('m-gerente-cargo').textContent = ov.gerente_cargo;
+      } else { gcargoRow.style.display = 'none'; }
+      if (ov.fecha) {
+        gfechaRow.style.display = '';
+        var d = new Date(ov.fecha);
+        document.getElementById('m-gerente-fecha').textContent = d.toLocaleDateString('es-CO', {day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+      } else { gfechaRow.style.display = 'none'; }
+    } else { procSec.style.display = 'none'; }
+    const btnCv = document.getElementById('btn-cv');
+    if (c.cv_file) { btnCv.href = c.cv_file; btnCv.style.display = ''; } else { btnCv.style.display = 'none'; }
+    const btnLi = document.getElementById('btn-linkedin');
+    if (c.linkedin && c.linkedin !== 'None') { btnLi.href = c.linkedin; btnLi.style.display = ''; } else { btnLi.style.display = 'none'; }
+    const note = document.getElementById('proceso-note');
+    const actionsDiv = document.getElementById('modal-estado-actions');
+    note.style.display = 'none';
+    renderEstadoActions(actionsDiv, c, est, note);
+    // Show/hide delete button for locally-added candidates
+    var delBtn = document.getElementById('btn-delete-modal');
+    if (delBtn) {
+      if (c._local) { delBtn.style.display = ''; } else { delBtn.style.display = 'none'; }
+    }
+    loadHistorial(c.nombre);
+    document.getElementById('modal-overlay').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function loadHistorial(candidatoNombre) {
+    var sec = document.getElementById('historial-section');
+    var tl = document.getElementById('historial-timeline');
+    tl.innerHTML = '<span class="historial-empty">Cargando...</span>';
+    sec.style.display = '';
+    db.ref(FB_HIST + '/' + candidatoNombre).once('value').then(function(snap) {
+      var data = snap.val();
+      if (!data) {
+        tl.innerHTML = '<span class="historial-empty">Sin interacciones registradas aún.</span>';
+        return;
+      }
+      var entries = Object.values(data).sort(function(a,b) { return new Date(b.fecha) - new Date(a.fecha); });
+      var colorMap = { 'En proceso': 'proceso', 'Disponible': 'disponible', 'Contratado': 'contratado', 'Rechazado': 'rechazado', 'Desistió': 'desistio' };
+      tl.innerHTML = entries.map(function(e) {
+        var d = new Date(e.fecha);
+        var fechaStr = d.toLocaleDateString('es-CO', {day:'2-digit', month:'short', year:'numeric'}) + ' ' + d.toLocaleTimeString('es-CO', {hour:'2-digit', minute:'2-digit'});
+        var dotClass = 'historial-dot';
+        for (var k in colorMap) { if (e.accion && e.accion.indexOf(k) === 0) { dotClass += ' ' + colorMap[k]; break; } }
+        var meta = e.actor || '';
+        if (e.cargo) meta += ' · ' + e.cargo;
+        meta += ' · ' + fechaStr;
+        return '<div class="historial-item">' +
+          '<div class="historial-dot-col"><div class="' + dotClass + '"></div><div class="historial-line"></div></div>' +
+          '<div class="historial-content">' +
+            '<div class="historial-accion">' + (e.accion || '—') + '</div>' +
+            '<div class="historial-meta">' + meta + '</div>' +
+          '</div></div>';
+      }).join('');
+    });
+  }
+
+  function closeModal() {
+    document.getElementById('modal-overlay').classList.remove('open');
+    document.body.style.overflow = '';
+    currentIdx = null;
+  }
+
+  // Estado actions rendered dynamically — no static listener needed
+
+  document.getElementById('btn-close').addEventListener('click', closeModal);
+  document.getElementById('modal-overlay').addEventListener('click', e => { if (e.target === document.getElementById('modal-overlay')) closeModal(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+  document.querySelectorAll('.pill:not(.cargo)').forEach(pill => {
+    pill.addEventListener('click', function() {
+      document.querySelectorAll('.pill:not(.cargo)').forEach(p => p.classList.remove('active'));
+      this.classList.add('active');
+      currentFilter = this.dataset.estado;
+      applyFilters();
+    });
+  });
+
+  document.querySelectorAll('.pill.cargo').forEach(pill => {
+    pill.addEventListener('click', function() {
+      document.querySelectorAll('.pill.cargo').forEach(p => p.classList.remove('active'));
+      this.classList.add('active');
+      currentCargo = this.dataset.cargo;
+      applyFilters();
+    });
+  });
+
+  document.getElementById('search').addEventListener('input', function() { currentSearch = this.value; applyFilters(); });
+  document.getElementById('sort-select').addEventListener('change', function() { applyFilters(); });
+  window.exportarHistorial = function() {
+    var dbRef = db.ref(FB_HIST);
+    dbRef.once('value').then(function(snap) {
+      var data = snap.val() || {};
+      var rows = [['Candidato','Acción','Actor','Cargo Actor','Fecha']];
+      Object.keys(data).sort().forEach(function(nombre) {
+        var entries = data[nombre];
+        Object.keys(entries).forEach(function(key) {
+          var e = entries[key];
+          var fecha = e.fecha ? new Date(e.fecha).toLocaleString('es-CO') : '';
+          rows.push([nombre, e.accion || '', e.actor || '', e.cargo || '', fecha]);
+        });
+      });
+      var csv = rows.map(function(r) {
+        return r.map(function(v) { return '"' + String(v).replace(/"/g,'""') + '"'; }).join(',');
+      }).join('\n');
+      var blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url; a.download = 'historial_referidos.csv';
+      document.body.appendChild(a); a.click();
+      document.body.removeChild(a); URL.revokeObjectURL(url);
+    }).catch(function(e) { alert('Error al exportar historial: ' + e.message); });
+  };
+
+
+  // Load overrides from Firebase, then render
+  db.ref(FB_REF).once('value').then(function(snap) {
+    overrides = snap.val() || {};
+    var nuevosLocales = loadNuevos();
+    candidatos = CANDIDATOS.concat(nuevosLocales);
+    updateStats(candidatos); applyFilters();
+  });
+
+  // Listen for real-time changes from gerentes portal
+  db.ref(FB_REF).on('value', function(snap) {
+    overrides = snap.val() || {};
+    updateStats(candidatos);
+    applyFilters();
+  });
+
+  document.getElementById('modal-nuevo-overlay').addEventListener('click', function(e) {
+    if (e.target === this) closeNuevo();
+  });
+
+  function deleteCandidate(filteredIdx, fromModal) {
+    var c = filtered[filteredIdx];
+    if (!c || !c._local) return;
+    if (!confirm('¿Eliminar a "' + c.nombre + '" del portal?')) return;
+    // Remove from localStorage
+    var nuevos = loadNuevos().filter(function(n) { return n.nombre !== c.nombre || n.fecha !== c.fecha; });
+    saveNuevos(nuevos);
+    // Remove from candidatos array
+    var globalIdx = candidatos.indexOf(c);
+    if (globalIdx >= 0) candidatos.splice(globalIdx, 1);
+    if (fromModal) closeModal();
+    updateStats(candidatos);
+    applyFilters();
+    var toast = document.getElementById('toast');
+    toast.textContent = '🗑 ' + c.nombre + ' eliminado.';
+    toast.classList.add('show');
+    setTimeout(function() { toast.classList.remove('show'); }, 3000);
+  }
+
+  // Expose internals so global functions (submitNuevo) can access them
+  function openEditPanel() {
+    var c = filtered[currentIdx];
+    if (!c) return;
+    document.getElementById('ep-nombre').value = c.nombre || '';
+    document.getElementById('ep-cargo').value = c.cargo || '';
+    document.getElementById('ep-referido').value = c.referido_por || '';
+    document.getElementById('ep-linkedin').value = c.linkedin || '';
+    document.getElementById('ep-cvfile').value = c.cv_file || '';
+    document.getElementById('ep-profesion').value = c.profesion || '';
+    document.getElementById('ep-universidad').value = c.universidad || '';
+    document.getElementById('ep-experiencia').value = c.experiencia || '';
+    document.getElementById('ep-empresa').value = c.ultima_empresa || '';
+    document.getElementById('ep-ucargo').value = c.ultimo_cargo || '';
+    document.getElementById('ep-resumen').value = c.resumen || '';
+    document.getElementById('edit-panel-overlay').style.display = 'flex';
+  }
+
+  function closeEditPanel() {
+    document.getElementById('edit-panel-overlay').style.display = 'none';
+  }
+
+  function saveEdit() {
+    var c = filtered[currentIdx];
+    if (!c) return;
+    c.nombre = document.getElementById('ep-nombre').value.trim();
+    c.cargo = document.getElementById('ep-cargo').value.trim();
+    c.referido_por = document.getElementById('ep-referido').value.trim();
+    c.linkedin = document.getElementById('ep-linkedin').value.trim();
+    c.cv_file = document.getElementById('ep-cvfile').value.trim();
+    c.profesion = document.getElementById('ep-profesion').value.trim();
+    c.universidad = document.getElementById('ep-universidad').value.trim();
+    c.experiencia = document.getElementById('ep-experiencia').value.trim();
+    c.ultima_empresa = document.getElementById('ep-empresa').value.trim();
+    c.ultimo_cargo = document.getElementById('ep-ucargo').value.trim();
+    c.resumen = document.getElementById('ep-resumen').value.trim();
+    // If local candidate, persist changes to localStorage
+    if (c._local) {
+      var nuevos = loadNuevos();
+      var idx = nuevos.findIndex(function(n) { return n.nombre === c._origNombre || n.nombre === c.nombre; });
+      if (idx >= 0) nuevos[idx] = c; else nuevos.push(c);
+      saveNuevos(nuevos);
+    }
+    closeEditPanel();
+    updateStats(candidatos);
+    applyFilters();
+    // Reopen modal with updated data
+    var newIdx = filtered.indexOf(c);
+    if (newIdx >= 0) openModal(newIdx);
+    var toast = document.getElementById('toast');
+    toast.textContent = '✓ Cambios guardados.';
+    toast.classList.add('show');
+    setTimeout(function() { toast.classList.remove('show'); }, 3000);
+  }
+
+  window._leal = { getCandidatos: () => candidatos, updateStats, applyFilters, deleteCandidate, currentIdx: () => currentIdx, openEditPanel, closeEditPanel, saveEdit };
+
+})();
+</script>
+
+
+<!-- Edit Panel -->
+<div id="edit-panel-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:300;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:16px;padding:32px;width:90%;max-width:600px;max-height:90vh;overflow-y:auto;position:relative;">
+    <button onclick="window._leal&&window._leal.closeEditPanel()" style="position:absolute;top:16px;right:16px;background:none;border:none;font-size:20px;cursor:pointer;color:#9CA3AF;">&#10005;</button>
+    <h2 style="font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:700;margin-bottom:20px;">Editar candidato</h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div class="form-group"><label>Nombre completo</label><input type="text" id="ep-nombre"></div>
+      <div class="form-group"><label>Cargo propuesto</label><input type="text" id="ep-cargo"></div>
+      <div class="form-group"><label>Referido por</label><input type="text" id="ep-referido"></div>
+      <div class="form-group"><label>LinkedIn</label><input type="text" id="ep-linkedin"></div>
+      <div class="form-group"><label>Nombre archivo CV</label><input type="text" id="ep-cvfile" placeholder="Ej: CV_Nombre.pdf"></div>
+      <div class="form-group"><label>Profesión</label><input type="text" id="ep-profesion"></div>
+      <div class="form-group"><label>Universidad</label><input type="text" id="ep-universidad"></div>
+      <div class="form-group"><label>Años de experiencia</label><input type="text" id="ep-experiencia"></div>
+      <div class="form-group"><label>Última empresa</label><input type="text" id="ep-empresa"></div>
+      <div class="form-group"><label>Último cargo</label><input type="text" id="ep-ucargo"></div>
+      <div class="form-group" style="grid-column:1/-1"><label>Resumen del perfil</label><textarea id="ep-resumen" style="resize:vertical;min-height:100px;width:100%;padding:10px;border:1px solid #E4E7EF;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:14px;"></textarea></div>
+    </div>
+    <div style="margin-top:20px;display:flex;gap:10px;justify-content:flex-end;">
+      <button onclick="window._leal&&window._leal.closeEditPanel()" style="padding:10px 20px;border-radius:8px;border:1.5px solid #E4E7EF;background:#fff;font-family:'DM Sans',sans-serif;font-size:14px;cursor:pointer;">Cancelar</button>
+      <button onclick="window._leal&&window._leal.saveEdit()" style="padding:10px 24px;border-radius:8px;border:none;background:#2B4EE6;color:#fff;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;">Guardar cambios</button>
+    </div>
+  </div>
+</div>
+
+<!-- Panel de referidos nuevos -->
+<div class="referidos-panel" id="referidos-panel">
+  <div class="referidos-panel-header">
+    <div>
+      <div style="font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:700;color:var(--text);">&#128276; Referidos pendientes</div>
+      <div style="font-size:12px;color:var(--text-3);margin-top:2px;">Candidatos enviados por los directores</div>
+    </div>
+    <button onclick="toggleReferidosPanel()" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--text-3);padding:4px;">&#10005;</button>
+  </div>
+  <div class="referidos-panel-body" id="referidos-panel-body">
+    <div style="text-align:center;padding:40px 0;color:var(--text-3);font-size:13px;">Cargando...</div>
+  </div>
+</div>
+<div id="referidos-backdrop" onclick="toggleReferidosPanel()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.2);z-index:299;"></div>
+
+<script>
+(function() {
+  var FB_NUEVOS = 'referidos_nuevos';
+  var panelOpen = false;
+  var allReferidos = {};
+
+  window.toggleReferidosPanel = function() {
+    panelOpen = !panelOpen;
+    document.getElementById('referidos-panel').classList.toggle('open', panelOpen);
+    document.getElementById('referidos-backdrop').style.display = panelOpen ? 'block' : 'none';
+    if (panelOpen) renderReferidosPanel();
+  };
+
+  function renderReferidosPanel() {
+    var body = document.getElementById('referidos-panel-body');
+    var keys = Object.keys(allReferidos);
+    if (!keys.length) {
+      body.innerHTML = '<div style="text-align:center;padding:40px 0;color:var(--text-3);font-size:13px;">No hay referidos pendientes.</div>';
+      return;
+    }
+    // Sort newest first
+    keys.sort(function(a,b) {
+      var da = allReferidos[a].fecha || '', db = allReferidos[b].fecha || '';
+      return da > db ? -1 : 1;
+    });
+    body.innerHTML = keys.map(function(key) {
+      var r = allReferidos[key];
+      var fecha = r.fecha ? new Date(r.fecha).toLocaleDateString('es-CO', {day:'2-digit',month:'short',year:'numeric'}) : '';
+      var esNuevo = !r.visto;
+      return '<div class="ref-card' + (esNuevo ? ' nuevo' : '') + '" id="rcard-' + key + '">' +
+        (esNuevo ? '<div style="font-size:10px;font-weight:700;color:#2563EB;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">&#9679; Nuevo</div>' : '') +
+        '<div class="ref-card-name">' + (r.nombre || '—') + '</div>' +
+        '<div class="ref-card-meta">Cargo: <strong>' + (r.cargo || '—') + '</strong> &nbsp;·&nbsp; Referido por: <strong>' + (r.referente || '—') + '</strong></div>' +
+        (r.email ? '<div class="ref-card-meta">Correo: ' + r.email + '</div>' : '') +
+        '<div class="ref-card-meta" style="margin-top:4px;">' + fecha + '</div>' +
+        (r.nota ? '<div class="ref-card-nota">"' + r.nota + '"</div>' : '') +
+        '<div class="ref-card-actions">' +
+          (esNuevo ? '<button class="btn-visto" onclick="window.marcarVisto(\'' + key + '\')">&#10003; Marcar como visto</button>' : '<span style="font-size:11px;color:var(--text-4);">&#10003; Visto</span>') +
+          '<button onclick="window.eliminarReferido(\'' + key + '\')" style="font-size:12px;padding:5px 12px;border-radius:6px;border:1.5px solid #FCA5A5;background:#FEF2F2;color:#DC2626;cursor:pointer;margin-left:auto;">&#128465; Eliminar</button>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  window.marcarVisto = function(key) {
+    var fbApp = window._fbApp;
+    if (!fbApp) return;
+    var db2 = firebase.database(fbApp);
+    db2.ref(FB_NUEVOS + '/' + key + '/visto').set(true);
+  };
+
+  window.eliminarReferido = function(key) {
+    if (!confirm('¿Eliminar este referido permanentemente?')) return;
+    var fbApp = window._fbApp;
+    if (!fbApp) return;
+    var db2 = firebase.database(fbApp);
+    db2.ref(FB_NUEVOS + '/' + key).remove().then(function() {
+      delete allReferidos[key];
+      renderReferidosPanel();
+    }).catch(function(e) { alert('Error al eliminar: ' + e.message); });
+  };
+
+  // Listen to Firebase referidos_nuevos
+  function startListening() {
+    var fbApp = window._fbApp;
+    if (!fbApp) { setTimeout(startListening, 500); return; }
+    var db2 = firebase.database(fbApp);
+    db2.ref(FB_NUEVOS).on('value', function(snap) {
+      allReferidos = snap.val() || {};
+      var pendientes = Object.values(allReferidos).filter(function(r) { return !r.visto; }).length;
+      var badge = document.getElementById('referidos-badge');
+      var btn = document.getElementById('btn-referidos-alert');
+      if (badge) badge.textContent = pendientes;
+      if (btn) btn.style.display = pendientes > 0 ? 'flex' : 'none';
+      if (panelOpen) renderReferidosPanel();
+    });
+  }
+  startListening();
+})();
+</script>
+</body>
+</html>
